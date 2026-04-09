@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'openclaw.db');
+const dbPath = path.resolve('./openclaw.db');
 const db = new sqlite3.Database(dbPath);
 
 export default function handler(req, res) {
@@ -15,7 +15,7 @@ export default function handler(req, res) {
     const stmt = db.prepare(
       'INSERT INTO compliance_requests (clinic_name, work_email, number_of_locations) VALUES (?, ?, ?)'
     );
-    stmt.run([clinic_name, work_email, number_of_locations], function (err) {
+    stmt.run([clinic_name, work_email, number_of_locations], function(err) {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: 'Failed to save data' });

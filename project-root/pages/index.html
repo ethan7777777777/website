@@ -1,0 +1,45 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComplianceCurrent | CCPA Compliance for Med Spas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="logo">Compliance<span>Current</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="cta" id="cta">
+      <div class="container">
+        <h2>Book your free CCPA scan today.</h2>
+        <form class="cta-form" action="/api/submit" method="POST">
+          <label>
+            Clinic name
+            <input type="text" name="clinic_name" placeholder="Radiant Aesthetics" required>
+          </label>
+          <label>
+            Work email
+            <input type="email" name="work_email" placeholder="privacy@clinic.com" required>
+          </label>
+          <label>
+            Number of locations
+            <select name="number_of_locations" required>
+              <option value="" disabled selected>Choose</option>
+              <option>1 location</option>
+              <option>2-3 locations</option>
+              <option>4+ locations</option>
+            </select>
+          </label>
+          <button class="btn primary" type="submit">Get My Free Compliance Scan</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

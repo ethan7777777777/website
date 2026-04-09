@@ -1,0 +1,43 @@
+/* styles.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+.site-header {
+  background: #003366;
+  color: white;
+  padding: 1rem;
+}
+.logo span {
+  font-weight: bold;
+}
+.container {
+  width: 90%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.cta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cta-form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+}
+.cta-form input, .cta-form select {
+  padding: 0.5rem;
+  margin-top: 0.3rem;
+}
+.btn.primary {
+  background-color: #0066cc;
+  color: white;
+  padding: 0.7rem;
+  border: none;
+  cursor: pointer;
+}
+.btn.primary:hover {
+  background-color: #004c99;
+}
