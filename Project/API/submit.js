@@ -1,8 +1,7 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+import sqlite3 from 'sqlite3';
+import path from 'path';
 
-// Use an absolute path to ensure the DB file is created inside your project
-const db = new createConnection('./openclaw.db');
+const dbPath = path.join(process.cwd(), 'openclaw.db');
 const db = new sqlite3.Database(dbPath);
 
 export default function handler(req, res) {
