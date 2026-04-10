@@ -1,81 +1,42 @@
-const fs = require("fs");
-const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
+const { ensureSchema, pool } = require("../lib/db");
 
-let db;
-
-function getDbPath() {
-  const localDataDir = path.join(process.cwd(), "data");
-  const isVercel = Boolean(process.env.VERCEL);
-
-  if (isVercel) {
-    return path.join("/tmp", "compliancecurrent.db");
-  }
-
-  if (!fs.existsSync(localDataDir)) {
-    fs.mkdirSync(localDataDir, { recursive: true });
-  }
-
-  return path.join(localDataDir, "compliancecurrent.db");
-}
-
-function run(dbConn, sql, params = []) {
+function parseBody(req) {
   return new Promise((resolve, reject) => {
-    dbConn.run(sql, params, function onRun(err) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(this);
+    if (req.body && typeof req.body === "object") {
+      resolve(req.body);
+      return;
+    }
+
+    let raw = "";
+    req.on("data", (chunk) => {
+      raw += chunk;
     });
-  });
-}
 
-function initDb() {
-  if (db) {
-    return Promise.resolve(db);
-  }
-
-  const dbPath = getDbPath();
-
-  return new Promise((resolve, reject) => {
-    const instance = new sqlite3.Database(dbPath, async (err) => {
-      if (err) {
-        reject(err);
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
         return;
       }
 
+      const contentType = req.headers["content-type"] || "";
       try {
-        await run(
-          instance,
-          `CREATE TABLE IF NOT EXISTS compliance_requests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            business_name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            locations INTEGER NOT NULL,
-            website TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-          )`
-        );
-        db = instance;
-        resolve(db);
-      } catch (schemaError) {
-        reject(schemaError);
+        if (contentType.includes("application/json")) {
+          resolve(JSON.parse(raw));
+          return;
+        }
+        if (contentType.includes("application/x-www-form-urlencoded")) {
+          const params = new URLSearchParams(raw);
+          resolve(Object.fromEntries(params.entries()));
+          return;
+        }
+        resolve({});
+      } catch (error) {
+        reject(error);
       }
     });
-  });
-}
 
-async function saveLead(dbConn, payload) {
-  const sql =
-    "INSERT INTO compliance_requests (business_name, email, locations, website) VALUES (?, ?, ?, ?)";
-  const params = [
-    payload.business_name,
-    payload.email,
-    payload.locations,
-    payload.website
-  ];
-  return run(dbConn, sql, params);
+    req.on("error", reject);
+  });
 }
 
 async function queueFutureScan(website) {
@@ -93,7 +54,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { business_name, email, locations, website } = req.body || {};
+    const body = await parseBody(req);
+    const { business_name, email, locations, website } = body;
 
     if (!business_name || !email || !locations || !website) {
       return res.status(400).json({
@@ -101,31 +63,36 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const normalizedPayload = {
+    const normalized = {
       business_name: String(business_name).trim(),
       email: String(email).trim().toLowerCase(),
       locations: Number(locations),
       website: String(website).trim()
     };
 
-    if (!Number.isInteger(normalizedPayload.locations) || normalizedPayload.locations < 1) {
+    if (!Number.isInteger(normalized.locations) || normalized.locations < 1) {
       return res.status(400).json({ error: "locations must be a positive integer" });
     }
 
     try {
-      // Validates a proper URL format early before future scraping.
-      new URL(normalizedPayload.website);
-    } catch (urlError) {
+      new URL(normalized.website);
+    } catch (_error) {
       return res.status(400).json({ error: "website must be a valid URL" });
     }
 
-    const dbConn = await initDb();
-    const result = await saveLead(dbConn, normalizedPayload);
-    await queueFutureScan(normalizedPayload.website);
+    await ensureSchema();
+    const insert = await pool.query(
+      `INSERT INTO compliance_requests (business_name, email, locations, website)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [normalized.business_name, normalized.email, normalized.locations, normalized.website]
+    );
+
+    await queueFutureScan(normalized.website);
 
     return res.status(200).json({
       message: "Lead captured successfully",
-      id: result.lastID
+      id: insert.rows[0].id
     });
   } catch (error) {
     return res.status(500).json({
