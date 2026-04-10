@@ -1,0 +1,12 @@
+{
+  "name": "compliancecurrent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ComplianceCurrent lead capture and CCPA scan intake",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

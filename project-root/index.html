@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ComplianceCurrent | CCPA Audit</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <h1>Get Your CCPA Compliance Audit</h1>
+        <p class="subtitle">
+          ComplianceCurrent helps California med spas identify privacy and data
+          disclosure risks.
+        </p>
+
+        <form id="leadForm" action="/api/submit" method="POST" novalidate>
+          <label for="business_name">Business name</label>
+          <input
+            id="business_name"
+            name="business_name"
+            type="text"
+            autocomplete="organization"
+            required
+          />
+
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required />
+
+          <label for="locations">Number of locations</label>
+          <input
+            id="locations"
+            name="locations"
+            type="number"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            required
+          />
+
+          <label for="website">Website URL</label>
+          <input
+            id="website"
+            name="website"
+            type="url"
+            placeholder="https://example.com"
+            autocomplete="url"
+            required
+          />
+
+          <button type="submit" id="submitButton">Start Audit</button>
+          <p id="statusMessage" class="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("leadForm");
+      const statusMessage = document.getElementById("statusMessage");
+      const submitButton = document.getElementById("submitButton");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        statusMessage.textContent = "";
+
+        if (!form.reportValidity()) {
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+
+        const payload = {
+          business_name: form.business_name.value.trim(),
+          email: form.email.value.trim(),
+          locations: Number(form.locations.value),
+          website: form.website.value.trim()
+        };
+
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Submission failed.");
+          }
+
+          statusMessage.classList.remove("error");
+          statusMessage.classList.add("success");
+          statusMessage.textContent = data.message || "Submitted successfully.";
+          form.reset();
+        } catch (error) {
+          statusMessage.classList.remove("success");
+          statusMessage.classList.add("error");
+          statusMessage.textContent = error.message || "Something went wrong.";
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Start Audit";
+        }
+      });
+    </script>
+  </body>
+</html>
