@@ -5,18 +5,13 @@ const sqlite3 = require("sqlite3").verbose();
 let db;
 
 function getDbPath() {
-  const localDataDir = path.join(process.cwd(), "data");
   const isVercel = Boolean(process.env.VERCEL);
 
   if (isVercel) {
-    return path.join("/tmp", "compliancecurrent.db");
+    return path.join("/tmp", "openclaw.db");
   }
 
-  if (!fs.existsSync(localDataDir)) {
-    fs.mkdirSync(localDataDir, { recursive: true });
-  }
-
-  return path.join(localDataDir, "compliancecurrent.db");
+  return path.join(process.cwd(), "openclaw.db");
 }
 
 function run(dbConn, sql, params = []) {
@@ -86,6 +81,48 @@ async function queueFutureScan(website) {
   return { queued: false, website };
 }
 
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    if (req.body && typeof req.body === "object") {
+      resolve(req.body);
+      return;
+    }
+
+    let raw = "";
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      const contentType = req.headers["content-type"] || "";
+
+      try {
+        if (contentType.includes("application/json")) {
+          resolve(JSON.parse(raw));
+          return;
+        }
+
+        if (contentType.includes("application/x-www-form-urlencoded")) {
+          const params = new URLSearchParams(raw);
+          resolve(Object.fromEntries(params.entries()));
+          return;
+        }
+
+        resolve({});
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on("error", reject);
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -93,7 +130,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { business_name, email, locations, website } = req.body || {};
+    const body = await parseBody(req);
+    const { business_name, email, locations, website } = body;
 
     if (!business_name || !email || !locations || !website) {
       return res.status(400).json({
