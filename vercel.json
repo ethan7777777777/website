@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/api/submit", "dest": "/api/submit.js" },
+    { "src": "/api/leads", "dest": "/api/leads.js" },
     { "src": "/styles.css", "dest": "/styles.css" },
     { "src": "/", "dest": "/index.html" }
   ]

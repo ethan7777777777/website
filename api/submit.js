@@ -55,7 +55,10 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = await parseBody(req);
-    const { business_name, email, locations, website } = body;
+    const business_name = body.business_name || body.clinic_name;
+    const email = body.email || body.work_email;
+    const locations = body.locations || body.number_of_locations;
+    const { website } = body;
 
     if (!business_name || !email || !locations || !website) {
       return res.status(400).json({

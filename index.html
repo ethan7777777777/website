@@ -3,107 +3,247 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ComplianceCurrent | CCPA Audit</title>
+    <title>ComplianceCurrent | CCPA Compliance for Med Spas</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="page">
-      <section class="card">
-        <h1>Get Your CCPA Compliance Audit</h1>
-        <p class="subtitle">
-          ComplianceCurrent helps California med spas identify privacy and data
-          disclosure risks.
-        </p>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="logo" href="#">ComplianceCurrent</a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="#features">Features</a>
+          <a href="#process">Process</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-sm" href="#cta">Free Scan</a>
+      </div>
+    </header>
 
-        <form id="leadForm" action="/api/submit" method="POST" novalidate>
-          <label for="business_name">Business name</label>
-          <input
-            id="business_name"
-            name="business_name"
-            type="text"
-            autocomplete="organization"
-            required
-          />
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <p class="eyebrow">CCPA Compliance for California Med Spas</p>
+            <h1>Protect your med spa from CCPA fines before the next inspection.</h1>
+            <p class="lead">
+              ComplianceCurrent scans your website, flags privacy gaps, and gives
+              you a practical remediation plan so your team can move fast with
+              confidence.
+            </p>
+            <div class="hero-actions">
+              <a class="btn" href="#cta">Get Free Scan</a>
+              <a class="btn btn-ghost" href="#pricing">See Pricing</a>
+            </div>
+            <ul class="bullet-list">
+              <li>Data mapping</li>
+              <li>Consent policies</li>
+              <li>Compliance documentation</li>
+            </ul>
+          </div>
+          <aside class="risk-panel" aria-label="Top CCPA risks">
+            <h2>Top CCPA Risks</h2>
+            <div class="risk-item">
+              <span>Missing consumer rights language</span>
+              <strong>42%</strong>
+            </div>
+            <div class="risk-item">
+              <span>No clear cookie disclosure</span>
+              <strong>31%</strong>
+            </div>
+            <div class="risk-item">
+              <span>Incomplete data category listing</span>
+              <strong>27%</strong>
+            </div>
+            <p class="risk-note">
+              Benchmarks based on recent med spa audits in California.
+            </p>
+          </aside>
+        </div>
+      </section>
 
-          <label for="email">Work email</label>
-          <input id="email" name="email" type="email" autocomplete="email" required />
+      <section class="risk-banner">
+        <div class="container risk-banner-wrap">
+          <p>
+            CCPA penalties can reach <strong>$2,500 per violation</strong>
+            and increase for intentional violations.
+          </p>
+          <a class="btn btn-light" href="#cta">Run My Risk Scan</a>
+        </div>
+      </section>
 
-          <label for="locations">Number of locations</label>
-          <input
-            id="locations"
-            name="locations"
-            type="number"
-            min="1"
-            step="1"
-            inputmode="numeric"
-            required
-          />
+      <section class="metrics section-pad">
+        <div class="container grid-3">
+          <article class="card metric-card">
+            <h3>180+</h3>
+            <p>California med spas supported</p>
+          </article>
+          <article class="card metric-card">
+            <h3>$0 fines</h3>
+            <p>Across active client portfolio</p>
+          </article>
+          <article class="card metric-card">
+            <h3>48 hours</h3>
+            <p>Typical turnaround for first report</p>
+          </article>
+        </div>
+      </section>
 
-          <label for="website">Website URL</label>
-          <input
-            id="website"
-            name="website"
-            type="url"
-            placeholder="https://example.com"
-            autocomplete="url"
-            required
-          />
+      <section id="features" class="section-pad section-alt">
+        <div class="container">
+          <h2 class="section-title">Everything you need to stay compliant</h2>
+          <div class="grid-3">
+            <article class="card feature-card">
+              <h3>Risk Scan</h3>
+              <p>
+                Automated website scanning for privacy policy gaps, tracking
+                disclosures, and opt-out visibility.
+              </p>
+            </article>
+            <article class="card feature-card">
+              <h3>Policy Kit</h3>
+              <p>
+                Actionable updates for privacy policy language, rights
+                disclosures, and data handling notices.
+              </p>
+            </article>
+            <article class="card feature-card">
+              <h3>Training</h3>
+              <p>
+                Team-ready guidance so front desk and marketing staff know what
+                to say and document.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
 
-          <button type="submit" id="submitButton">Start Audit</button>
-          <p id="statusMessage" class="status" aria-live="polite"></p>
-        </form>
+      <section id="process" class="section-pad">
+        <div class="container">
+          <h2 class="section-title">How it works</h2>
+          <div class="grid-3">
+            <article class="card process-card">
+              <span class="step">01</span>
+              <h3>Free Scan</h3>
+              <p>Submit your site and business details for an instant intake.</p>
+            </article>
+            <article class="card process-card">
+              <span class="step">02</span>
+              <h3>Remediation</h3>
+              <p>Receive prioritized fixes mapped to the highest legal risk.</p>
+            </article>
+            <article class="card process-card">
+              <span class="step">03</span>
+              <h3>Compliance Packet</h3>
+              <p>
+                Download implementation-ready documents and next-step checklists.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" class="section-pad section-alt">
+        <div class="container">
+          <h2 class="section-title">Pricing for every stage</h2>
+          <div class="grid-3">
+            <article class="card pricing-card">
+              <h3>Starter</h3>
+              <p class="price">$99</p>
+              <p>Single-location intake and baseline risk report.</p>
+            </article>
+            <article class="card pricing-card featured">
+              <h3>Growth</h3>
+              <p class="price">$199</p>
+              <p>Multi-location scan with remediation guidance and templates.</p>
+            </article>
+            <article class="card pricing-card">
+              <h3>Enterprise</h3>
+              <p class="price">Custom</p>
+              <p>Portfolio-level audits, staff enablement, and legal workflow.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad testimonials">
+        <div class="container">
+          <h2 class="section-title">Trusted by med spa operators</h2>
+          <div class="grid-2">
+            <blockquote class="card quote">
+              “ComplianceCurrent helped us fix our disclosures in one week and
+              gave us a plan we could actually execute.”
+              <cite>— Operations Director, Bay Area Med Spa</cite>
+            </blockquote>
+            <blockquote class="card quote">
+              “The report was clear, specific, and saved our team hours of
+              legal guesswork.”
+              <cite>— Founder, Orange County Aesthetics Group</cite>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      <section id="cta" class="section-pad cta-section">
+        <div class="container cta-wrap">
+          <div>
+            <h2>Start your free compliance scan</h2>
+            <p>
+              Enter your details and website URL. We will scan your pages for
+              CCPA risk signals and send your intake confirmation.
+            </p>
+          </div>
+          <form class="cta-form" action="/api/submit" method="POST">
+            <input type="text" name="clinic_name" placeholder="Business name" required>
+            <input type="email" name="work_email" placeholder="Work email" required>
+            <select name="number_of_locations" required>
+              <option value="" disabled selected>Number of locations</option>
+              <option value="1">1 location</option>
+              <option value="2">2 locations</option>
+              <option value="3">3 locations</option>
+              <option value="4">4+ locations</option>
+            </select>
+            <input type="url" name="website" placeholder="https://yourmedspa.com" required>
+            <button type="submit">Start Audit</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="faq" class="section-pad faq">
+        <div class="container">
+          <h2 class="section-title">FAQ</h2>
+          <div class="grid-2">
+            <article class="card">
+              <h3>How fast is the first report?</h3>
+              <p>Most first-pass audits are delivered within 48 hours.</p>
+            </article>
+            <article class="card">
+              <h3>Do you support multi-location brands?</h3>
+              <p>Yes. Growth and Enterprise plans are built for group operators.</p>
+            </article>
+          </div>
+        </div>
       </section>
     </main>
 
-    <script>
-      const form = document.getElementById("leadForm");
-      const statusMessage = document.getElementById("statusMessage");
-      const submitButton = document.getElementById("submitButton");
-
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        statusMessage.textContent = "";
-
-        if (!form.reportValidity()) {
-          return;
-        }
-
-        submitButton.disabled = true;
-        submitButton.textContent = "Submitting...";
-
-        const payload = {
-          business_name: form.business_name.value.trim(),
-          email: form.email.value.trim(),
-          locations: Number(form.locations.value),
-          website: form.website.value.trim()
-        };
-
-        try {
-          const response = await fetch(form.action, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "Submission failed.");
-          }
-
-          statusMessage.classList.remove("error");
-          statusMessage.classList.add("success");
-          statusMessage.textContent = data.message || "Submitted successfully.";
-          form.reset();
-        } catch (error) {
-          statusMessage.classList.remove("success");
-          statusMessage.classList.add("error");
-          statusMessage.textContent = error.message || "Something went wrong.";
-        } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "Start Audit";
-        }
-      });
-    </script>
+    <footer class="site-footer">
+      <div class="container footer-wrap">
+        <div>
+          <strong>ComplianceCurrent</strong>
+          <p>CCPA readiness platform for California med spas.</p>
+        </div>
+        <div>
+          <p><strong>Contact</strong></p>
+          <p>support@compliancecurrent.com</p>
+          <p>(555) 481-2204</p>
+        </div>
+        <div>
+          <p><strong>Links</strong></p>
+          <p><a href="#features">Features</a></p>
+          <p><a href="#pricing">Pricing</a></p>
+          <p><a href="#faq">FAQ</a></p>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
