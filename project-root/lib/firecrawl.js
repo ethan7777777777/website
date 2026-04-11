@@ -1,7 +1,12 @@
 const FIRECRAWL_API_BASE = process.env.FIRECRAWL_API_BASE || "https://api.firecrawl.dev";
 
 function getFirecrawlKey() {
-  return process.env.FIRECRAWL_API_KEY || "";
+  return (
+    process.env.FIRECRAWL_API_KEY ||
+    process.env.FIRECRAWL_KEY ||
+    process.env.FIRECRAWL_TOKEN ||
+    ""
+  );
 }
 
 function sleep(ms) {
@@ -23,7 +28,7 @@ function uniqueUrls(urls) {
 async function mapWebsite(url) {
   const apiKey = getFirecrawlKey();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 35_000);
+  const timeout = setTimeout(() => controller.abort(), 20_000);
 
   const response = await fetch(`${FIRECRAWL_API_BASE}/v1/map`, {
     method: "POST",
@@ -34,16 +39,13 @@ async function mapWebsite(url) {
     body: JSON.stringify({
       url,
       search: "privacy policy do not sell cookie legal notice terms contact request california consumer privacy",
-      limit: 50
+      limit: 30
     }),
     signal: controller.signal
   }).finally(() => clearTimeout(timeout));
 
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    return [];
-  }
-
+  if (!response.ok) return [];
   const links = payload.links || payload.data?.links || [];
   return Array.isArray(links) ? links : [];
 }
@@ -70,14 +72,9 @@ function rankCandidateUrls(urls) {
     .map((x) => x.u);
 }
 
-async function submitExtractJob(urls) {
-  const apiKey = getFirecrawlKey();
-  if (!apiKey) {
-    throw new Error("FIRECRAWL_API_KEY is not set");
-  }
-
+async function submitExtractJob(urls, apiKey) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45_000);
+  const timeout = setTimeout(() => controller.abort(), 25_000);
 
   const response = await fetch(`${FIRECRAWL_API_BASE}/v1/extract`, {
     method: "POST",
@@ -120,8 +117,8 @@ async function submitExtractJob(urls) {
       scrapeOptions: {
         formats: ["rawHtml", "html", "markdown", "links"],
         onlyMainContent: false,
-        waitFor: 2500,
-        timeout: 45000,
+        waitFor: 1800,
+        timeout: 30000,
         blockAds: false,
         removeBase64Images: true
       }
@@ -131,56 +128,54 @@ async function submitExtractJob(urls) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || payload.message || `Firecrawl extract submit failed (${response.status})`);
+    const status = response.status;
+    const message = payload.error || payload.message || `Firecrawl extract submit failed (${status})`;
+    const error = new Error(message);
+    error.status = status;
+    throw error;
   }
 
   const id = payload.id || payload.data?.id;
-  if (!id) {
-    throw new Error("Firecrawl extract did not return a job id");
-  }
-
+  if (!id) throw new Error("Firecrawl extract did not return a job id");
   return { id, submitPayload: payload };
 }
 
-async function getExtractJobStatus(id) {
-  const apiKey = getFirecrawlKey();
+async function getExtractJobStatus(id, apiKey) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45_000);
+  const timeout = setTimeout(() => controller.abort(), 25_000);
 
   const response = await fetch(`${FIRECRAWL_API_BASE}/v1/extract/${id}`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    },
+    headers: { Authorization: `Bearer ${apiKey}` },
     signal: controller.signal
   }).finally(() => clearTimeout(timeout));
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || payload.message || `Firecrawl extract status failed (${response.status})`);
+    const status = response.status;
+    const message = payload.error || payload.message || `Firecrawl extract status failed (${status})`;
+    const error = new Error(message);
+    error.status = status;
+    throw error;
   }
 
   return payload;
 }
 
-async function runExtract(urls) {
-  const { id, submitPayload } = await submitExtractJob(urls);
+async function runExtract(urls, apiKey) {
+  const { id, submitPayload } = await submitExtractJob(urls, apiKey);
   const startedAt = Date.now();
-  const timeoutMs = 90_000;
+  const timeoutMs = 35_000;
   let latest = null;
 
   while (Date.now() - startedAt < timeoutMs) {
-    latest = await getExtractJobStatus(id);
+    latest = await getExtractJobStatus(id, apiKey);
     const status = String(latest.status || "").toLowerCase();
-
-    if (status === "completed") {
-      return { id, submitPayload, resultPayload: latest };
-    }
+    if (status === "completed") return { id, submitPayload, resultPayload: latest };
     if (status === "failed" || status === "cancelled") {
       throw new Error(latest.error || latest.message || `Firecrawl extract job ${status}`);
     }
-
-    await sleep(1500);
+    await sleep(1200);
   }
 
   throw new Error("Firecrawl extract timed out before completion");
@@ -196,12 +191,7 @@ function collectSourcePages(resultPayload) {
     const html = source.rawHtml || source.html || "";
     const markdown = source.markdown || "";
     if (!pageUrl && !html && !markdown) continue;
-    pages.push({
-      url: pageUrl,
-      html,
-      markdown,
-      metadata: source.metadata || {}
-    });
+    pages.push({ url: pageUrl, html, markdown, metadata: source.metadata || {} });
   }
 
   return pages;
@@ -210,14 +200,8 @@ function collectSourcePages(resultPayload) {
 function collectExtractedFindings(resultPayload) {
   const data = resultPayload.data || {};
   const directFindings = Array.isArray(data.findings) ? data.findings : [];
-
-  if (directFindings.length > 0) {
-    return directFindings;
-  }
-
-  // Some responses return the extraction payload nested under `data.data`.
-  const nestedFindings = Array.isArray(data.data?.findings) ? data.data.findings : [];
-  return nestedFindings;
+  if (directFindings.length > 0) return directFindings;
+  return Array.isArray(data.data?.findings) ? data.data.findings : [];
 }
 
 function findingsToText(findings) {
@@ -239,41 +223,116 @@ function findingsToText(findings) {
     .join("\n\n");
 }
 
+async function scrapeSingle(url, apiKey) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 22_000);
+  const response = await fetch(`${FIRECRAWL_API_BASE}/v1/scrape`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["rawHtml", "html", "markdown", "links"],
+      onlyMainContent: false,
+      waitFor: 1600,
+      timeout: 25000
+    }),
+    signal: controller.signal
+  }).finally(() => clearTimeout(timeout));
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload.error || payload.message || `Firecrawl scrape failed (${response.status})`;
+    throw new Error(message);
+  }
+  const data = payload.data || payload;
+  return {
+    url,
+    html: data.rawHtml || data.html || "",
+    markdown: data.markdown || "",
+    metadata: data.metadata || {},
+    raw: payload
+  };
+}
+
+async function scrapeFallback(urls, apiKey) {
+  const pages = [];
+  const targets = urls.slice(0, 5);
+  for (const target of targets) {
+    try {
+      const page = await scrapeSingle(target, apiKey);
+      pages.push(page);
+    } catch (_e) {
+      // best-effort fallback
+    }
+  }
+  return pages;
+}
+
 async function scrapeWebsiteBundle(url) {
+  const apiKey = getFirecrawlKey();
+  if (!apiKey) {
+    throw new Error("FIRECRAWL_API_KEY is not set (also checks FIRECRAWL_KEY and FIRECRAWL_TOKEN)");
+  }
+
   const mapped = await mapWebsite(url);
-  const ranked = rankCandidateUrls(mapped).filter((u) => u && u !== url).slice(0, 10);
+  const ranked = rankCandidateUrls(mapped).filter((u) => u && u !== url).slice(0, 8);
   const urls = uniqueUrls([url, ...ranked]);
 
-  const { id, submitPayload, resultPayload } = await runExtract(urls);
-  const pages = collectSourcePages(resultPayload);
-  const extractedFindings = collectExtractedFindings(resultPayload);
+  try {
+    const { id, submitPayload, resultPayload } = await runExtract(urls, apiKey);
+    const pages = collectSourcePages(resultPayload);
+    const extractedFindings = collectExtractedFindings(resultPayload);
+    const combinedHtml = pages.map((p) => p.html).filter(Boolean).join("\n\n");
+    const combinedMarkdown = [...pages.map((p) => p.markdown).filter(Boolean), findingsToText(extractedFindings)]
+      .filter(Boolean)
+      .join("\n\n");
 
-  const combinedHtml = pages.map((p) => p.html).filter(Boolean).join("\n\n");
-  const combinedMarkdown = [
-    ...pages.map((p) => p.markdown).filter(Boolean),
-    findingsToText(extractedFindings)
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  return {
-    html: combinedHtml,
-    markdown: combinedMarkdown,
-    metadata: {
-      extract_job_id: id
-    },
-    pages_scanned: pages.length
-      ? pages.map((p) => ({ url: p.url, kind: "extract-source" }))
-      : urls.map((u) => ({ url: u, kind: "extract-target" })),
-    raw: {
-      mode: "extract",
-      submit: submitPayload,
-      result: resultPayload,
-      mapped_links: mapped,
-      targeted_urls: urls,
-      extracted_findings: extractedFindings
+    if (!combinedHtml && !combinedMarkdown) {
+      throw new Error("Extract returned no usable page content");
     }
-  };
+
+    return {
+      html: combinedHtml,
+      markdown: combinedMarkdown,
+      metadata: { extract_job_id: id },
+      pages_scanned: pages.length
+        ? pages.map((p) => ({ url: p.url, kind: "extract-source" }))
+        : urls.map((u) => ({ url: u, kind: "extract-target" })),
+      raw: {
+        mode: "extract",
+        submit: submitPayload,
+        result: resultPayload,
+        mapped_links: mapped,
+        targeted_urls: urls,
+        extracted_findings: extractedFindings
+      }
+    };
+  } catch (extractError) {
+    const pages = await scrapeFallback(urls, apiKey);
+    const combinedHtml = pages.map((p) => p.html).filter(Boolean).join("\n\n");
+    const combinedMarkdown = pages.map((p) => p.markdown).filter(Boolean).join("\n\n");
+
+    if (!combinedHtml && !combinedMarkdown) {
+      throw extractError;
+    }
+
+    return {
+      html: combinedHtml,
+      markdown: combinedMarkdown,
+      metadata: { fallback: "scrape_after_extract_failure" },
+      pages_scanned: pages.map((p) => ({ url: p.url, kind: "scrape-fallback" })),
+      raw: {
+        mode: "scrape_fallback",
+        extract_error: extractError.message,
+        mapped_links: mapped,
+        targeted_urls: urls,
+        pages: pages.map((p) => ({ url: p.url, metadata: p.metadata, raw: p.raw }))
+      }
+    };
+  }
 }
 
 module.exports = {

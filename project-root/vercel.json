@@ -1,11 +1,16 @@
 {
   "version": 2,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 60
+    }
+  },
   "routes": [
-    { "src": "/api/submit", "dest": "/API/submit.js" },
-    { "src": "/api/leads", "dest": "/API/leads.js" },
-    { "src": "/api/scan-result", "dest": "/API/scan-result.js" },
-    { "src": "/api/public-report", "dest": "/API/public-report.js" },
-    { "src": "/api/download-remediated", "dest": "/API/download-remediated.js" },
+    { "src": "/api/submit", "dest": "/api/submit.js" },
+    { "src": "/api/leads", "dest": "/api/leads.js" },
+    { "src": "/api/scan-result", "dest": "/api/scan-result.js" },
+    { "src": "/api/public-report", "dest": "/api/public-report.js" },
+    { "src": "/api/download-remediated", "dest": "/api/download-remediated.js" },
     { "src": "/styles.css", "dest": "/styles.css" },
     { "src": "/", "dest": "/index.html" }
   ]
