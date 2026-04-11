@@ -343,10 +343,12 @@ h1 {
 .report-card {
   margin-top: 14px;
   background: #ffffff;
+  color: var(--text);
 }
 
 .report-card h3 {
   margin: 0 0 8px;
+  color: var(--text);
 }
 
 .report-card p {
