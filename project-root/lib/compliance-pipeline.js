@@ -5,6 +5,10 @@ const { analyzeCcpaCompliance } = require("./ccpa");
 function isScrapeUsable(scrape) {
   const combined = `${scrape.html || ""} ${scrape.markdown || ""}`.toLowerCase();
   const textLength = combined.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
+  const pagesCount = Array.isArray(scrape.pages_scanned) ? scrape.pages_scanned.length : 0;
+  const extractedFindingsCount = Array.isArray(scrape.raw?.extracted_findings)
+    ? scrape.raw.extracted_findings.length
+    : 0;
   const strongBlockedMarkers = [
     "access denied",
     "forbidden",
@@ -23,18 +27,26 @@ function isScrapeUsable(scrape) {
     combined.includes("privacy policy") ||
     combined.includes("services") ||
     combined.includes("contact") ||
-    combined.includes("about");
+    combined.includes("about") ||
+    combined.includes("cookie") ||
+    combined.includes("do not sell") ||
+    combined.includes("california");
 
-  const hardBlocked = matchedStrong.length > 0;
+  const hardBlocked = matchedStrong.length > 0 && textLength < 1200 && !hasMeaningfulSiteSignals;
   const likelyFalsePositiveSoftCaptcha = matchedSoft.length > 0 && textLength > 4000 && hasMeaningfulSiteSignals;
   const blocked = hardBlocked || (matchedSoft.length > 0 && !likelyFalsePositiveSoftCaptcha && textLength < 1500);
-  const usable = textLength >= 800 && !blocked;
+  const hasEnoughText = textLength >= 350;
+  const hasEvidenceFromBreadth = pagesCount >= 2 && textLength >= 220;
+  const hasEvidenceFromExtraction = extractedFindingsCount > 0 && textLength >= 140;
+  const usable = (hasEnoughText || hasEvidenceFromBreadth || hasEvidenceFromExtraction || hasMeaningfulSiteSignals) && !blocked;
 
   return {
     usable,
     textLength,
     matchedMarkers: [...matchedStrong, ...matchedSoft],
-    hasMeaningfulSiteSignals
+    hasMeaningfulSiteSignals,
+    pagesCount,
+    extractedFindingsCount
   };
 }
 
@@ -98,7 +110,7 @@ async function runComplianceScanForLead(leadId, website) {
         title: "Unable to analyze website content reliably",
         recommendation:
           "Website content may be blocked or too limited for a reliable compliance assessment. Retry with crawl access enabled.",
-        message: `Text length=${quality.textLength}; markers=${quality.matchedMarkers.join(", ") || "none"}`,
+        message: `Text length=${quality.textLength}; pages=${quality.pagesCount}; extracted_findings=${quality.extractedFindingsCount}; markers=${quality.matchedMarkers.join(", ") || "none"}`,
         firecrawlRaw: scrape.raw
       });
       return { scanId, status: "failed", error: "Insufficient or blocked website content" };
