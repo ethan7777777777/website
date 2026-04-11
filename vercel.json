@@ -4,6 +4,8 @@
     { "src": "/api/submit", "dest": "/api/submit.js" },
     { "src": "/api/leads", "dest": "/api/leads.js" },
     { "src": "/api/scan-result", "dest": "/api/scan-result.js" },
+    { "src": "/api/public-report", "dest": "/api/public-report.js" },
+    { "src": "/api/download-remediated", "dest": "/api/download-remediated.js" },
     { "src": "/styles.css", "dest": "/styles.css" },
     { "src": "/", "dest": "/index.html" }
   ]

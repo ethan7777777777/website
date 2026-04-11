@@ -27,6 +27,15 @@ Set these in Vercel project settings:
   - Requires `Authorization: Bearer <AI_READ_API_KEY>`
   - Returns scan issues, risk score, and `remediated_html` with compliance additions
 
+- `GET /api/public-report?lead_id=<id>&token=<report_token>`
+  - Public report endpoint for customer delivery
+  - Returns risk score, issues, and compliance findings
+  - Includes `download_url` for paid (`fix_299`) plans
+
+- `GET /api/download-remediated?lead_id=<id>&token=<report_token>`
+  - Downloads generated remediated website HTML
+  - Available only for paid (`fix_299`) scans after completion
+
 ## Legal Note
 
 This scanner provides AI-generated compliance guidance and is not legal advice.

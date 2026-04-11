@@ -43,6 +43,22 @@ async function ensureSchema() {
   `);
 
   await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free_audit'
+  `);
+
+  await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS report_token TEXT
+  `);
+
+  await db.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_compliance_requests_report_token
+    ON compliance_requests(report_token)
+    WHERE report_token IS NOT NULL
+  `);
+
+  await db.query(`
     CREATE TABLE IF NOT EXISTS compliance_scans (
       id BIGSERIAL PRIMARY KEY,
       lead_id BIGINT NOT NULL REFERENCES compliance_requests(id) ON DELETE CASCADE,

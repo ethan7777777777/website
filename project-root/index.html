@@ -157,7 +157,7 @@
                 <li>Risk score (red/yellow/green)</li>
                 <li>Prioritized fix roadmap</li>
               </ul>
-              <a class="btn pricing-action" href="#cta">Start Audit</a>
+              <a class="btn pricing-action" href="#cta" data-plan="free_audit">Start Audit</a>
             </article>
             <article class="card pricing-card featured">
               <p class="badge">Most Popular</p>
@@ -172,7 +172,7 @@
                 <li>Alerts if anything breaks</li>
                 <li>Ongoing updates as laws change</li>
               </ul>
-              <a class="btn pricing-action" href="#cta">Get Protected</a>
+              <a class="btn pricing-action" href="#cta" data-plan="fix_299">Get Protected</a>
             </article>
             <article class="card pricing-card">
               <h3>Multi-Location / Enterprise</h3>
@@ -183,7 +183,7 @@
                 <li>Advanced monitoring</li>
                 <li>API integrations</li>
               </ul>
-              <a class="btn pricing-action" href="#cta">Talk to Sales</a>
+              <a class="btn pricing-action" href="#cta" data-plan="fix_299">Talk to Sales</a>
             </article>
           </div>
         </div>
@@ -217,6 +217,7 @@
             </p>
           </div>
           <form class="cta-form" action="/api/submit" method="POST">
+            <input type="hidden" name="plan" value="free_audit">
             <input type="text" name="clinic_name" placeholder="Business name" required>
             <input type="email" name="work_email" placeholder="Work email" required>
             <select name="number_of_locations" required>
@@ -229,6 +230,12 @@
             <input type="url" name="website" placeholder="https://yourmedspa.com" required>
             <button type="submit">Start Audit</button>
           </form>
+          <article id="scanResult" class="card report-card" hidden>
+            <h3>Your CCPA Scan Results</h3>
+            <p id="scanSummary"></p>
+            <ul id="issuesList"></ul>
+            <p id="reportLinks"></p>
+          </article>
         </div>
       </section>
 
@@ -268,5 +275,80 @@
         </div>
       </div>
     </footer>
+    <script>
+      (function () {
+        const form = document.querySelector(".cta-form");
+        const planInput = form.querySelector('input[name="plan"]');
+        const submitButton = form.querySelector("button[type='submit']");
+        const resultCard = document.getElementById("scanResult");
+        const summary = document.getElementById("scanSummary");
+        const issuesList = document.getElementById("issuesList");
+        const reportLinks = document.getElementById("reportLinks");
+        const planButtons = document.querySelectorAll(".pricing-action[data-plan]");
+
+        function setPlan(plan) {
+          planInput.value = plan;
+          submitButton.textContent = plan === "fix_299" ? "Start Paid Scan" : "Start Audit";
+        }
+
+        planButtons.forEach((button) => {
+          button.addEventListener("click", () => setPlan(button.dataset.plan));
+        });
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          resultCard.hidden = true;
+          issuesList.innerHTML = "";
+          reportLinks.innerHTML = "";
+
+          const payload = {
+            clinic_name: form.clinic_name.value.trim(),
+            work_email: form.work_email.value.trim(),
+            number_of_locations: form.number_of_locations.value,
+            website: form.website.value.trim(),
+            plan: planInput.value
+          };
+
+          submitButton.disabled = true;
+          submitButton.textContent = "Scanning...";
+
+          try {
+            const response = await fetch(form.action, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "Scan failed");
+            }
+
+            resultCard.hidden = false;
+            summary.textContent = `Risk score: ${data.scan?.risk?.score ?? "N/A"} (${data.scan?.risk?.label ?? "unknown"}).`;
+
+            const reportResponse = await fetch(data.report_url);
+            const reportData = await reportResponse.json();
+            const issues = reportData.issues || [];
+            issues.slice(0, 10).forEach((issue) => {
+              const li = document.createElement("li");
+              li.textContent = `${issue.title} - ${issue.recommendation}`;
+              issuesList.appendChild(li);
+            });
+
+            if (reportData.download_url) {
+              reportLinks.innerHTML = `<a href="${reportData.download_url}">Download Remediated Website Code</a>`;
+            } else {
+              reportLinks.innerHTML = `<a href="${data.report_url}">View Full Report JSON</a>`;
+            }
+          } catch (error) {
+            resultCard.hidden = false;
+            summary.textContent = error.message || "Unable to run scan.";
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = planInput.value === "fix_299" ? "Start Paid Scan" : "Start Audit";
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -42,7 +42,9 @@ module.exports = async function handler(req, res) {
           l.email,
           l.locations,
           l.website,
+          l.plan,
           l.created_at,
+          l.report_token,
           s.status AS latest_scan_status,
           s.risk_label AS latest_risk_label,
           s.risk_score AS latest_risk_score
@@ -61,7 +63,14 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       count: result.rowCount,
-      leads: result.rows
+      leads: result.rows.map((lead) => ({
+        ...lead,
+        report_url: `/api/public-report?lead_id=${lead.id}&token=${lead.report_token}`,
+        download_url:
+          lead.plan === "fix_299"
+            ? `/api/download-remediated?lead_id=${lead.id}&token=${lead.report_token}`
+            : null
+      }))
     });
   } catch (error) {
     return res.status(500).json({
