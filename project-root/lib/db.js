@@ -53,6 +53,26 @@ async function ensureSchema() {
   `);
 
   await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'not_required'
+  `);
+
+  await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS stripe_session_id TEXT
+  `);
+
+  await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT
+  `);
+
+  await db.query(`
+    ALTER TABLE compliance_requests
+    ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT
+  `);
+
+  await db.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_compliance_requests_report_token
     ON compliance_requests(report_token)
     WHERE report_token IS NOT NULL

@@ -335,8 +335,12 @@
               issuesList.appendChild(li);
             });
 
-            if (reportData.download_url) {
+            if (data.checkout_url) {
+              reportLinks.innerHTML = `<a href="${data.checkout_url}" target="_blank" rel="noopener">Complete Payment To Unlock Fix Package</a>`;
+            } else if (reportData.download_url) {
               reportLinks.innerHTML = `<a href="${reportData.download_url}">Download Remediated Website Code</a>`;
+            } else if (reportData.payment_required) {
+              reportLinks.innerHTML = `<p>Payment is still pending for this lead. Complete checkout from your original payment link.</p><a href="${data.report_url}">View Full Report JSON</a>`;
             } else {
               reportLinks.innerHTML = `<a href="${data.report_url}">View Full Report JSON</a>`;
             }

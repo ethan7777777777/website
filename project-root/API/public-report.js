@@ -35,6 +35,8 @@ module.exports = async function handler(req, res) {
           l.business_name,
           l.website,
           l.plan,
+          l.payment_status,
+          l.stripe_session_id,
           s.id AS scan_id,
           s.status,
           s.risk_label,
@@ -62,7 +64,7 @@ module.exports = async function handler(req, res) {
 
     const row = result.rows[0];
     const downloadUrl =
-      row.plan === "fix_299" && row.status === "completed"
+      row.plan === "fix_299" && row.payment_status === "paid" && row.status === "completed"
         ? `/api/download-remediated?lead_id=${row.lead_id}&token=${token}`
         : null;
 
@@ -71,6 +73,7 @@ module.exports = async function handler(req, res) {
       business_name: row.business_name,
       website: row.website,
       plan: row.plan,
+      payment_status: row.payment_status,
       scan_id: row.scan_id,
       status: row.status,
       risk_label: row.risk_label,
@@ -79,7 +82,8 @@ module.exports = async function handler(req, res) {
       ccpa_uncompliances: row.detected_issues || [],
       legal_disclaimer: row.legal_disclaimer,
       updated_at: row.updated_at,
-      download_url: downloadUrl
+      download_url: downloadUrl,
+      payment_required: row.plan === "fix_299" && row.payment_status !== "paid"
     });
   } catch (error) {
     return res.status(500).json({

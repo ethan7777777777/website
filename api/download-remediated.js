@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
     const result = await pool.query(
       `SELECT
           l.plan,
+          l.payment_status,
           s.status,
           s.remediated_html
        FROM compliance_requests l
@@ -42,6 +43,10 @@ module.exports = async function handler(req, res) {
     const row = result.rows[0];
     if (row.plan !== "fix_299") {
       return res.status(403).json({ error: "Download is available for the $299 option only" });
+    }
+
+    if (row.payment_status !== "paid") {
+      return res.status(402).json({ error: "Payment required before remediated download is available" });
     }
 
     if (row.status !== "completed" || !row.remediated_html) {

@@ -43,6 +43,7 @@ module.exports = async function handler(req, res) {
           l.locations,
           l.website,
           l.plan,
+          l.payment_status,
           l.created_at,
           l.report_token,
           s.status AS latest_scan_status,
@@ -67,7 +68,7 @@ module.exports = async function handler(req, res) {
         ...lead,
         report_url: `/api/public-report?lead_id=${lead.id}&token=${lead.report_token}`,
         download_url:
-          lead.plan === "fix_299"
+          lead.plan === "fix_299" && lead.payment_status === "paid"
             ? `/api/download-remediated?lead_id=${lead.id}&token=${lead.report_token}`
             : null
       }))
