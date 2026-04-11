@@ -241,6 +241,15 @@ function classifyFailedChecks(checks) {
     }));
 }
 
+function escapeHtml(input) {
+  return String(input || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function injectComplianceOverlay(originalHtml, website, issues) {
   const baseHtml =
     originalHtml && originalHtml.trim()
@@ -251,18 +260,99 @@ function injectComplianceOverlay(originalHtml, website, issues) {
     .map((issue) => `<li><strong>${issue.title}:</strong> ${issue.recommendation}</li>`)
     .join("");
 
+  const safeWebsite = escapeHtml(website);
+
   const block = `
-<section id="compliancecurrent-ccpa-overlay" style="border:2px solid #0a6ad6;border-radius:12px;padding:20px;margin:24px;background:#f5f9ff;font-family:Arial,sans-serif;">
-  <h2 style="margin-top:0;">CCPA Compliance Additions</h2>
-  <p><strong>Notice at Collection:</strong> We collect only the data needed to provide services, scheduling, and customer support.</p>
-  <p><strong>Consumer Rights:</strong> California consumers can request access, deletion, correction, and opt-out of sale/sharing.</p>
-  <p><strong>Do Not Sell or Share:</strong> <a href="/do-not-sell">Do Not Sell or Share My Personal Information</a></p>
-  <p><strong>Privacy Requests:</strong> Submit via privacy@yourdomain.com, (555) 000-0000, or our privacy request form.</p>
-  <p><strong>Global Privacy Control:</strong> We honor browser-enabled Global Privacy Control signals where required.</p>
-  <h3>Detected Risk Fixes</h3>
-  <ul>${issuesList}</ul>
-  <p style="font-size:12px;color:#5a6778;margin-top:14px;">${LEGAL_DISCLAIMER}</p>
-</section>`;
+<section id="compliancecurrent-ccpa-overlay" style="border:2px solid #0a6ad6;border-radius:12px;padding:20px;margin:24px;background:#f5f9ff;font-family:Arial,sans-serif;line-height:1.5;color:#102138;">
+  <h2 style="margin-top:0;">ComplianceCurrent CCPA Protection Pack</h2>
+  <p style="margin:0 0 10px;">Generated for: <strong>${safeWebsite}</strong></p>
+  <p style="margin:0 0 16px;">This package adds the baseline controls typically required for California CCPA/CPRA disclosures and request handling.</p>
+
+  <nav aria-label="CCPA quick links" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+    <a href="#ccpa-notice-at-collection" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Notice at Collection</a>
+    <a href="#ccpa-privacy-policy" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Privacy Policy</a>
+    <a href="#ccpa-do-not-sell" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Do Not Sell/Share</a>
+    <a href="#ccpa-cookie-disclosure" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Cookie Disclosure</a>
+    <a href="#ccpa-privacy-request" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Privacy Requests</a>
+  </nav>
+
+  <section id="ccpa-notice-at-collection" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Notice at Collection</h3>
+    <p style="margin:0;">At or before collection, we disclose that we collect identifiers, contact details, booking/treatment preferences, payment-adjacent transaction data, device/network data, and website interaction data for scheduling, service delivery, customer support, security, analytics, and legal compliance.</p>
+  </section>
+
+  <section id="ccpa-privacy-policy" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Privacy Policy Language (CCPA)</h3>
+    <p style="margin:0 0 8px;">California consumers have the right to know/access, delete, correct, and opt out of sale/sharing of personal information, and to limit certain uses of sensitive personal information where applicable. We do not discriminate against users for exercising privacy rights.</p>
+    <p style="margin:0;">We retain personal information only as long as reasonably necessary for disclosed business purposes and legal obligations, and we implement reasonable administrative, technical, and physical safeguards.</p>
+  </section>
+
+  <section id="ccpa-do-not-sell" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Do Not Sell or Share My Personal Information</h3>
+    <p style="margin:0 0 8px;">Provide a clear and conspicuous mechanism for California residents to opt out of sale/sharing.</p>
+    <p style="margin:0 0 8px;"><a href="#ccpa-privacy-request" style="color:#0a57b8;font-weight:600;">Do Not Sell or Share My Personal Information</a></p>
+    <p style="margin:0;">Global Privacy Control (GPC) signals should be treated as valid opt-out requests where required.</p>
+  </section>
+
+  <section id="ccpa-cookie-disclosure" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Cookie and Tracking Disclosure</h3>
+    <p style="margin:0 0 8px;">We use cookies and similar technologies for essential site operation, analytics, and advertising. Users can manage preferences and opt out of non-essential tracking and sharing where applicable.</p>
+    <p style="margin:0;">If ad-tech cookies are used, they must be disabled after an opt-out request is received.</p>
+  </section>
+
+  <section id="ccpa-privacy-request" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Privacy Request Methods and Verification</h3>
+    <ul style="margin:0;padding-left:20px;">
+      <li>Email: <a href="mailto:privacy@yourdomain.com">privacy@yourdomain.com</a></li>
+      <li>Phone: (555) 000-0000</li>
+      <li>Web form: `/privacy-request` endpoint/page</li>
+    </ul>
+    <p style="margin:8px 0 0;">Before fulfilling access/deletion/correction requests, verify requestor identity with a reasonable, risk-based process and support authorized-agent requests.</p>
+  </section>
+
+  <section id="ccpa-service-provider-controls" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Service Provider and Sensitive Data Controls</h3>
+    <p style="margin:0 0 8px;">Use written contracts restricting service providers from retaining, using, or disclosing personal information outside contracted business purposes.</p>
+    <p style="margin:0;">For health/treatment-related information, apply heightened handling controls and clearly disclose those protections.</p>
+  </section>
+
+  <section id="ccpa-detected-risk-fixes" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Detected Risk Fixes</h3>
+    <ul style="margin:0;padding-left:20px;">${issuesList}</ul>
+  </section>
+
+  <p style="font-size:12px;color:#5a6778;margin:8px 0 0;">${LEGAL_DISCLAIMER}</p>
+</section>
+<script>
+(function(){
+  try {
+    if (document.getElementById("ccpa-cookie-banner")) return;
+    var banner = document.createElement("div");
+    banner.id = "ccpa-cookie-banner";
+    banner.style.cssText = "position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;background:#0f172a;color:#fff;border-radius:10px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);font-family:Arial,sans-serif;";
+    banner.innerHTML = '<div style="max-width:980px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">'
+      + '<div style="font-size:14px;line-height:1.4;">We use cookies and similar technologies. You can manage non-essential tracking preferences and opt out of sale/sharing where applicable.</div>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<button id="ccpa-cookies-essential" style="border:1px solid #475569;background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">Essential Only</button>'
+      + '<button id="ccpa-cookies-accept" style="border:none;background:#22c55e;color:#06210f;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;">Accept</button>'
+      + '</div></div>';
+    document.body.appendChild(banner);
+
+    var key = "ccpa_cookie_pref";
+    if (localStorage.getItem(key)) {
+      banner.remove();
+      return;
+    }
+
+    var close = function(value){
+      try { localStorage.setItem(key, value); } catch(e) {}
+      if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+    };
+    document.getElementById("ccpa-cookies-essential").addEventListener("click", function(){ close("essential_only"); });
+    document.getElementById("ccpa-cookies-accept").addEventListener("click", function(){ close("accept_all"); });
+  } catch (_e) {}
+})();
+</script>`;
 
   if (baseHtml.includes("</body>")) {
     return baseHtml.replace("</body>", `${block}\n</body>`);
