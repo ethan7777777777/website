@@ -25,84 +25,8 @@ function uniqueUrls(urls) {
   return out;
 }
 
-function toAbsoluteUrl(baseUrl, pathOrUrl) {
-  try {
-    return new URL(pathOrUrl, baseUrl).toString();
-  } catch (_e) {
-    return "";
-  }
-}
-
-async function fetchPageDirect(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 18_000);
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "User-Agent": "ComplianceCurrentBot/1.0 (+https://compliancecurrent.com)"
-    },
-    redirect: "follow",
-    signal: controller.signal
-  }).finally(() => clearTimeout(timeout));
-
-  if (!response.ok) {
-    throw new Error(`Direct fetch failed (${response.status}) for ${url}`);
-  }
-
-  const html = await response.text();
-  return {
-    url,
-    html: html || "",
-    markdown: html || "",
-    metadata: {
-      status: response.status,
-      contentType: response.headers.get("content-type") || ""
-    }
-  };
-}
-
-async function directWebsiteFallback(url) {
-  const targets = uniqueUrls([
-    url,
-    toAbsoluteUrl(url, "/privacy-policy"),
-    toAbsoluteUrl(url, "/privacy"),
-    toAbsoluteUrl(url, "/do-not-sell"),
-    toAbsoluteUrl(url, "/privacy-request"),
-    toAbsoluteUrl(url, "/contact")
-  ]).slice(0, 6);
-
-  const pages = [];
-  for (const target of targets) {
-    try {
-      const page = await fetchPageDirect(target);
-      pages.push(page);
-    } catch (_e) {
-      // best effort fallback
-    }
-  }
-
-  const combinedHtml = pages.map((p) => p.html).filter(Boolean).join("\n\n");
-  const combinedMarkdown = pages.map((p) => p.markdown).filter(Boolean).join("\n\n");
-  if (!combinedHtml && !combinedMarkdown) {
-    throw new Error("Unable to fetch target website content directly");
-  }
-
-  return {
-    html: combinedHtml,
-    markdown: combinedMarkdown,
-    metadata: { fallback: "direct_fetch" },
-    pages_scanned: pages.map((p) => ({ url: p.url, kind: "direct-fallback" })),
-    raw: {
-      mode: "direct_fallback",
-      targeted_urls: targets,
-      pages: pages.map((p) => ({ url: p.url, metadata: p.metadata }))
-    }
-  };
-}
-
 async function mapWebsite(url) {
   const apiKey = getFirecrawlKey();
-  if (!apiKey) return [];
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
 
@@ -363,7 +287,7 @@ async function scrapeFallback(urls, apiKey) {
 async function scrapeWebsiteBundle(url) {
   const apiKey = getFirecrawlKey();
   if (!apiKey) {
-    return directWebsiteFallback(url);
+    throw new Error("FIRECRAWL_API_KEY is not set (also checks FIRECRAWL_KEY and FIRECRAWL_TOKEN)");
   }
 
   const mapped = await mapWebsite(url);
@@ -405,7 +329,7 @@ async function scrapeWebsiteBundle(url) {
     const combinedMarkdown = pages.map((p) => p.markdown).filter(Boolean).join("\n\n");
 
     if (!combinedHtml && !combinedMarkdown) {
-      return directWebsiteFallback(url);
+      throw extractError;
     }
 
     return {
