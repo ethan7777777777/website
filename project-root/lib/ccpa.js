@@ -31,7 +31,7 @@ function buildChecks(text) {
       title: "Failing to list CCPA rights",
       fail:
         !(
-          includesAny(text, ["right to know", "right to delete", "right to access", "right to correct"]) &&
+          includesAny(text, ["right to know", "right to delete", "right to access", "right to correct", "california residents have the right"]) &&
           includesAny(text, ["opt-out", "do not sell", "do not share"])
         ),
       severity: "high",
@@ -78,7 +78,7 @@ function buildChecks(text) {
         !(
           (text.includes("email") || text.includes("@")) &&
           (text.includes("phone") || text.includes("call")) &&
-          includesAny(text, ["request form", "submit request", "contact form"])
+          includesAny(text, ["request form", "submit request", "contact form", "privacy request"])
         ),
       severity: "medium",
       recommendation: "Provide at least two clear request methods (email, phone, web form) for privacy rights."
@@ -134,14 +134,53 @@ function buildChecks(text) {
   ];
 }
 
-function calculateRisk(issues) {
-  const weighted = issues.reduce((acc, issue) => {
-    const weight = issue.severity === "high" ? 10 : 6;
-    return acc + weight;
+function calculateRisk(checks) {
+  const weightFor = (severity) => (severity === "high" ? 10 : 6);
+  const weightedFailed = checks.reduce((acc, check) => {
+    if (!check.fail) {
+      return acc;
+    }
+    return acc + weightFor(check.severity);
   }, 0);
-  const score = Math.min(100, weighted);
-  const label = score >= 60 ? "red" : score >= 30 ? "yellow" : "green";
-  return { score, label };
+  const weightedPossible = checks.reduce((acc, check) => acc + weightFor(check.severity), 0);
+  const score = weightedPossible > 0 ? Math.round((weightedFailed / weightedPossible) * 100) : 0;
+  const boundedScore = Math.min(100, Math.max(0, score));
+  const highFailures = checks.filter((check) => check.fail && check.severity === "high").length;
+  const label =
+    boundedScore >= 70 || highFailures >= 5
+      ? "red"
+      : boundedScore >= 35 || highFailures >= 2
+        ? "yellow"
+        : "green";
+
+  return { score: boundedScore, label };
+}
+
+function buildEvidence(normalizedText, checks) {
+  const passedChecks = checks.filter((check) => !check.fail).length;
+  const failedChecks = checks.length - passedChecks;
+  const confidence =
+    normalizedText.length >= 3000 ? "high" : normalizedText.length >= 1200 ? "medium" : "low";
+
+  return {
+    normalized_text_length: normalizedText.length,
+    check_count: checks.length,
+    passed_check_count: passedChecks,
+    failed_check_count: failedChecks,
+    confidence
+  };
+}
+
+function classifyFailedChecks(checks) {
+  return checks
+    .filter((check) => check.fail)
+    .map((check) => ({
+      id: check.id,
+      category: check.category,
+      title: check.title,
+      severity: check.severity,
+      recommendation: check.recommendation
+    }));
 }
 
 function injectComplianceOverlay(originalHtml, website, issues) {
@@ -176,21 +215,15 @@ function injectComplianceOverlay(originalHtml, website, issues) {
 function analyzeCcpaCompliance({ website, html, markdown }) {
   const normalizedText = normalizeText(`${html || ""} ${markdown || ""}`);
   const checks = buildChecks(normalizedText);
-  const issues = checks
-    .filter((check) => check.fail)
-    .map((check) => ({
-      id: check.id,
-      category: check.category,
-      title: check.title,
-      severity: check.severity,
-      recommendation: check.recommendation
-    }));
-  const risk = calculateRisk(issues);
+  const issues = classifyFailedChecks(checks);
+  const risk = calculateRisk(checks);
+  const evidence = buildEvidence(normalizedText, checks);
   const remediatedHtml = injectComplianceOverlay(html, website, issues);
 
   return {
     issues,
     risk,
+    evidence,
     remediatedHtml,
     legalDisclaimer: LEGAL_DISCLAIMER
   };
