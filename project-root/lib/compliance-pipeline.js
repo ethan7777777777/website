@@ -2,6 +2,81 @@ const { getPool, ensureSchema } = require("./db");
 const { scrapeWebsiteBundle } = require("./firecrawl");
 const { analyzeCcpaCompliance } = require("./ccpa");
 
+async function fetchPageDirect(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 18_000);
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent": "ComplianceCurrentBot/1.0 (+https://compliancecurrent.com)"
+    },
+    redirect: "follow",
+    signal: controller.signal
+  }).finally(() => clearTimeout(timeout));
+
+  if (!response.ok) {
+    throw new Error(`Direct fetch failed (${response.status}) for ${url}`);
+  }
+
+  const html = await response.text();
+  return {
+    url,
+    html: html || "",
+    markdown: html || ""
+  };
+}
+
+function toAbsoluteUrl(base, pathOrUrl) {
+  try {
+    return new URL(pathOrUrl, base).toString();
+  } catch (_e) {
+    return "";
+  }
+}
+
+async function buildDirectFallbackBundle(website, reason) {
+  const targets = Array.from(
+    new Set(
+      [
+        website,
+        toAbsoluteUrl(website, "/privacy-policy"),
+        toAbsoluteUrl(website, "/privacy"),
+        toAbsoluteUrl(website, "/privacy-practices"),
+        toAbsoluteUrl(website, "/do-not-sell"),
+        toAbsoluteUrl(website, "/privacy-request"),
+        toAbsoluteUrl(website, "/contact")
+      ].filter(Boolean)
+    )
+  ).slice(0, 7);
+
+  const pages = [];
+  for (const target of targets) {
+    try {
+      const page = await fetchPageDirect(target);
+      pages.push(page);
+    } catch (_e) {
+      // best effort
+    }
+  }
+
+  const combinedHtml = pages.map((p) => p.html).filter(Boolean).join("\n\n");
+  const combinedMarkdown = pages.map((p) => p.markdown).filter(Boolean).join("\n\n");
+  if (!combinedHtml && !combinedMarkdown) {
+    throw new Error("Direct fallback could not retrieve website content");
+  }
+
+  return {
+    html: combinedHtml,
+    markdown: combinedMarkdown,
+    pages_scanned: pages.map((p) => ({ url: p.url, kind: "pipeline-direct-fallback" })),
+    raw: {
+      mode: "pipeline_direct_fallback",
+      reason: reason || null,
+      targeted_urls: targets
+    }
+  };
+}
+
 function isScrapeUsable(scrape) {
   const combined = `${scrape.html || ""} ${scrape.markdown || ""}`.toLowerCase();
   const textLength = combined.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length;
@@ -101,7 +176,16 @@ async function runComplianceScanForLead(leadId, website) {
 
   try {
     const pool = getPool();
-    const scrape = await scrapeWebsiteBundle(website);
+    let scrape;
+    try {
+      scrape = await scrapeWebsiteBundle(website);
+    } catch (scanError) {
+      try {
+        scrape = await buildDirectFallbackBundle(website, scanError.message);
+      } catch (_fallbackError) {
+        throw scanError;
+      }
+    }
     const quality = isScrapeUsable(scrape);
     if (!quality.usable) {
       await markScanFailed(scanId, {
