@@ -1,4 +1,4 @@
-const { ensureSchema, pool } = require("../lib/db");
+const { ensureSchema, getPool } = require("../lib/db");
 
 function isAuthorized(req) {
   const expected = process.env.AI_READ_API_KEY;
@@ -29,10 +29,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const rawLimit = Number(req.query.limit || 50);
+    const query = req.query || {};
+    const rawLimit = Number(query.limit || 50);
     const limit = Number.isInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), 500) : 50;
 
     await ensureSchema();
+    const pool = getPool();
     const result = await pool.query(
       `SELECT
           l.id,

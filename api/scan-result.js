@@ -1,4 +1,4 @@
-const { ensureSchema, pool } = require("../lib/db");
+const { ensureSchema, getPool } = require("../lib/db");
 
 function isAuthorized(req) {
   const expected = process.env.AI_READ_API_KEY;
@@ -27,13 +27,15 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const leadId = Number(req.query.lead_id);
+  const query = req.query || {};
+  const leadId = Number(query.lead_id);
   if (!Number.isInteger(leadId) || leadId < 1) {
     return res.status(400).json({ error: "lead_id query param is required" });
   }
 
   try {
     await ensureSchema();
+    const pool = getPool();
     const result = await pool.query(
       `SELECT id, lead_id, website, status, risk_label, risk_score, detected_issues,
               remediated_html, legal_disclaimer, created_at, updated_at

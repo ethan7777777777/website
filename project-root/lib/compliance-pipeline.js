@@ -1,8 +1,9 @@
-const { pool, ensureSchema } = require("./db");
+const { getPool, ensureSchema } = require("./db");
 const { scrapeWebsite } = require("./firecrawl");
 const { analyzeCcpaCompliance } = require("./ccpa");
 
 async function createPendingScan(leadId, website) {
+  const pool = getPool();
   const result = await pool.query(
     `INSERT INTO compliance_scans (lead_id, website, status)
      VALUES ($1, $2, 'pending')
@@ -13,6 +14,7 @@ async function createPendingScan(leadId, website) {
 }
 
 async function markScanFailed(scanId, error) {
+  const pool = getPool();
   await pool.query(
     `UPDATE compliance_scans
      SET status = 'failed',
@@ -42,6 +44,7 @@ async function runComplianceScanForLead(leadId, website) {
   const scanId = await createPendingScan(leadId, website);
 
   try {
+    const pool = getPool();
     const scrape = await scrapeWebsite(website);
     const analysis = analyzeCcpaCompliance({
       website,

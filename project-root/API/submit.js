@@ -1,4 +1,4 @@
-const { ensureSchema, pool } = require("../lib/db");
+const { ensureSchema, getPool } = require("../lib/db");
 const { runComplianceScanForLead } = require("../lib/compliance-pipeline");
 
 function parseBody(req) {
@@ -77,6 +77,7 @@ module.exports = async function handler(req, res) {
     }
 
     await ensureSchema();
+    const pool = getPool();
     const insert = await pool.query(
       `INSERT INTO compliance_requests (business_name, email, locations, website)
        VALUES ($1, $2, $3, $4)
