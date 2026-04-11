@@ -16,7 +16,7 @@
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <a class="btn btn-sm" href="#cta">Free Scan</a>
+        <a class="btn btn-sm plan-action" href="#cta" data-plan="free_audit">Free Scan</a>
       </div>
     </header>
 
@@ -31,7 +31,7 @@
               implementation, monthly monitoring, and updates as privacy laws evolve.
             </p>
             <div class="hero-actions">
-              <a class="btn" href="#cta">Get Protected</a>
+              <a class="btn plan-action" href="#cta" data-plan="fix_299">Get Protected</a>
               <a class="btn btn-ghost" href="#pricing">See Pricing</a>
             </div>
             <ul class="bullet-list">
@@ -67,7 +67,7 @@
             CCPA penalties can reach <strong>$2,500 per violation</strong>
             and increase for intentional violations.
           </p>
-          <a class="btn btn-light" href="#cta">Run My Risk Scan</a>
+          <a class="btn btn-light plan-action" href="#cta" data-plan="free_audit">Run My Risk Scan</a>
         </div>
       </section>
 
@@ -284,7 +284,7 @@
         const summary = document.getElementById("scanSummary");
         const issuesList = document.getElementById("issuesList");
         const reportLinks = document.getElementById("reportLinks");
-        const planButtons = document.querySelectorAll(".pricing-action[data-plan]");
+        const planButtons = document.querySelectorAll("[data-plan]");
 
         function setPlan(plan) {
           planInput.value = plan;
@@ -337,6 +337,8 @@
 
             if (data.checkout_url) {
               reportLinks.innerHTML = `<a href="${data.checkout_url}" target="_blank" rel="noopener">Complete Payment To Unlock Fix Package</a>`;
+            } else if (data.payment_status === "checkout_unavailable") {
+              reportLinks.innerHTML = `<p>Paid checkout is temporarily unavailable right now. The free scan result is still ready below.</p><a href="${data.report_url}">View Full Report JSON</a>`;
             } else if (reportData.download_url) {
               reportLinks.innerHTML = `<a href="${reportData.download_url}">Download Remediated Website Code</a>`;
             } else if (reportData.payment_required) {

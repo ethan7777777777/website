@@ -109,27 +109,41 @@ module.exports = async function handler(req, res) {
     const downloadPath = `/api/download-remediated?lead_id=${lead.id}&token=${lead.report_token}`;
 
     let checkoutUrl = null;
+    let paymentStatus = lead.plan === PLAN_FIX_299 ? "pending" : "not_required";
+    let paymentMessage = null;
     if (lead.plan === PLAN_FIX_299) {
-      const session = await createPaidPlanCheckoutSession({
-        req,
-        lead,
-        reportPath,
-        downloadPath
-      });
-      checkoutUrl = session.url || null;
-      await pool.query(
-        `UPDATE compliance_requests
-         SET stripe_session_id = $2
-         WHERE id = $1`,
-        [lead.id, session.id]
-      );
+      try {
+        const session = await createPaidPlanCheckoutSession({
+          req,
+          lead,
+          reportPath,
+          downloadPath
+        });
+        checkoutUrl = session.url || null;
+        await pool.query(
+          `UPDATE compliance_requests
+           SET stripe_session_id = $2
+           WHERE id = $1`,
+          [lead.id, session.id]
+        );
+      } catch (stripeError) {
+        paymentStatus = "checkout_unavailable";
+        paymentMessage = stripeError.message || "Payment checkout is temporarily unavailable";
+        await pool.query(
+          `UPDATE compliance_requests
+           SET payment_status = 'checkout_unavailable'
+           WHERE id = $1`,
+          [lead.id]
+        );
+      }
     }
 
     return res.status(200).json({
       message: "Lead captured successfully",
       id: lead.id,
       plan: lead.plan,
-      payment_status: lead.plan === PLAN_FIX_299 ? "pending" : "not_required",
+      payment_status: paymentStatus,
+      payment_message: paymentMessage,
       scan,
       report_url: reportPath,
       checkout_url: checkoutUrl,
