@@ -34,9 +34,25 @@ module.exports = async function handler(req, res) {
 
     await ensureSchema();
     const result = await pool.query(
-      `SELECT id, business_name, email, locations, website, created_at
-       FROM compliance_requests
-       ORDER BY created_at DESC
+      `SELECT
+          l.id,
+          l.business_name,
+          l.email,
+          l.locations,
+          l.website,
+          l.created_at,
+          s.status AS latest_scan_status,
+          s.risk_label AS latest_risk_label,
+          s.risk_score AS latest_risk_score
+       FROM compliance_requests l
+       LEFT JOIN LATERAL (
+         SELECT status, risk_label, risk_score
+         FROM compliance_scans cs
+         WHERE cs.lead_id = l.id
+         ORDER BY cs.created_at DESC
+         LIMIT 1
+       ) s ON true
+       ORDER BY l.created_at DESC
        LIMIT $1`,
       [limit]
     );

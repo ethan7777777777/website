@@ -1,4 +1,5 @@
 const { ensureSchema, pool } = require("../lib/db");
+const { runComplianceScanForLead } = require("../lib/compliance-pipeline");
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -37,14 +38,6 @@ function parseBody(req) {
 
     req.on("error", reject);
   });
-}
-
-async function queueFutureScan(website) {
-  // Future step:
-  // 1) fetch(website)
-  // 2) parse HTML
-  // 3) detect CCPA compliance signals
-  return { queued: false, website };
 }
 
 module.exports = async function handler(req, res) {
@@ -91,11 +84,12 @@ module.exports = async function handler(req, res) {
       [normalized.business_name, normalized.email, normalized.locations, normalized.website]
     );
 
-    await queueFutureScan(normalized.website);
+    const scan = await runComplianceScanForLead(insert.rows[0].id, normalized.website);
 
     return res.status(200).json({
       message: "Lead captured successfully",
-      id: insert.rows[0].id
+      id: insert.rows[0].id,
+      scan
     });
   } catch (error) {
     return res.status(500).json({

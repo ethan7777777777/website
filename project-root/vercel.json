@@ -3,6 +3,7 @@
   "routes": [
     { "src": "/api/submit", "dest": "/API/submit.js" },
     { "src": "/api/leads", "dest": "/API/leads.js" },
+    { "src": "/api/scan-result", "dest": "/API/scan-result.js" },
     { "src": "/styles.css", "dest": "/styles.css" },
     { "src": "/", "dest": "/index.html" }
   ]

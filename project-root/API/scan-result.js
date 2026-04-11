@@ -5,9 +5,8 @@ function isAuthorized(req) {
   if (!expected) {
     return false;
   }
-
-  const header = req.headers.authorization || "";
-  return header === `Bearer ${expected}`;
+  const auth = req.headers.authorization || "";
+  return auth === `Bearer ${expected}`;
 }
 
 module.exports = async function handler(req, res) {
@@ -28,39 +27,28 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  try {
-    const rawLimit = Number(req.query.limit || 50);
-    const limit = Number.isInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), 500) : 50;
+  const leadId = Number(req.query.lead_id);
+  if (!Number.isInteger(leadId) || leadId < 1) {
+    return res.status(400).json({ error: "lead_id query param is required" });
+  }
 
+  try {
     await ensureSchema();
     const result = await pool.query(
-      `SELECT
-          l.id,
-          l.business_name,
-          l.email,
-          l.locations,
-          l.website,
-          l.created_at,
-          s.status AS latest_scan_status,
-          s.risk_label AS latest_risk_label,
-          s.risk_score AS latest_risk_score
-       FROM compliance_requests l
-       LEFT JOIN LATERAL (
-         SELECT status, risk_label, risk_score
-         FROM compliance_scans cs
-         WHERE cs.lead_id = l.id
-         ORDER BY cs.created_at DESC
-         LIMIT 1
-       ) s ON true
-       ORDER BY l.created_at DESC
-       LIMIT $1`,
-      [limit]
+      `SELECT id, lead_id, website, status, risk_label, risk_score, detected_issues,
+              remediated_html, legal_disclaimer, created_at, updated_at
+       FROM compliance_scans
+       WHERE lead_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [leadId]
     );
 
-    return res.status(200).json({
-      count: result.rowCount,
-      leads: result.rows
-    });
+    if (!result.rowCount) {
+      return res.status(404).json({ error: "No scan found for that lead_id" });
+    }
+
+    return res.status(200).json(result.rows[0]);
   } catch (error) {
     return res.status(500).json({
       error: "Internal server error",
