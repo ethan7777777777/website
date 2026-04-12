@@ -291,9 +291,67 @@
           submitButton.textContent = plan === "fix_299" ? "Start Paid Scan" : "Start Audit";
         }
 
+        function sleep(ms) {
+          return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function fetchReport(reportUrl) {
+          const response = await fetch(reportUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Unable to fetch report");
+          }
+          return data;
+        }
+
+        async function autoHandleCheckoutSuccess() {
+          const params = new URLSearchParams(window.location.search);
+          const checkout = params.get("checkout");
+          const leadId = params.get("lead_id");
+          const token = params.get("token");
+
+          if (checkout !== "success" || !leadId || !token) return;
+
+          const reportUrl = `/api/public-report?lead_id=${encodeURIComponent(leadId)}&token=${encodeURIComponent(token)}`;
+          resultCard.hidden = false;
+          summary.textContent = "Payment received. Preparing your remediation file...";
+          reportLinks.innerHTML = "";
+
+          const attempts = 20;
+          for (let i = 0; i < attempts; i += 1) {
+            try {
+              const report = await fetchReport(reportUrl);
+              if (report.download_url) {
+                summary.textContent = "Payment confirmed. Starting your download now.";
+                reportLinks.innerHTML = `<a href="${report.download_url}">If your download does not start, click here.</a>`;
+                window.location.href = report.download_url;
+                return;
+              }
+
+              if (report.payment_status === "paid" && !report.download_url) {
+                summary.textContent = "Payment confirmed. Finalizing your remediation package...";
+              } else {
+                summary.textContent = "Waiting for payment confirmation...";
+              }
+            } catch (_error) {
+              summary.textContent = "Waiting for payment confirmation...";
+            }
+
+            await sleep(1500);
+          }
+
+          summary.textContent = "Payment looks complete, but your file is still processing.";
+          reportLinks.innerHTML = `<a href="${reportUrl}">Open your report to check download status.</a>`;
+        }
+
         planButtons.forEach((button) => {
           button.addEventListener("click", () => setPlan(button.dataset.plan));
         });
+
+        autoHandleCheckoutSuccess();
 
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
