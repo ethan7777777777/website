@@ -305,11 +305,74 @@ function buildControlStatus(failedIssueIds) {
   ];
 }
 
+function buildOrigin(website) {
+  try {
+    return new URL(String(website || "").trim()).origin;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function isLikelyThirdPartyApiScript(srcUrl, websiteOrigin) {
+  const raw = String(srcUrl || "").trim();
+  if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) return false;
+
+  let parsed;
+  try {
+    parsed = websiteOrigin ? new URL(raw, websiteOrigin) : new URL(raw);
+  } catch (_error) {
+    return false;
+  }
+
+  if (!/^https?:$/.test(parsed.protocol)) return false;
+  if (websiteOrigin && parsed.origin === websiteOrigin) return false;
+
+  const fullPath = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+  const lowerSearch = parsed.search.toLowerCase();
+  const hasApiCredentialParam = /[?&](key|api_key|apikey|token|client|signature)=/.test(lowerSearch);
+
+  if (fullPath.includes("maps.googleapis.com/maps/api/js")) return true;
+  if (fullPath.includes("maps.googleapis.com/maps-api-v3")) return true;
+  if (fullPath.includes("js.stripe.com")) return true;
+  if (fullPath.includes("recaptcha")) return true;
+  if (fullPath.includes("api.mapbox.com")) return true;
+  if (fullPath.includes("connect.facebook.net")) return true;
+  if (fullPath.includes("googletagmanager.com")) return true;
+  if (fullPath.includes("google-analytics.com")) return true;
+  if (fullPath.includes("bat.bing.com")) return true;
+  if (fullPath.includes("clarity.ms")) return true;
+  if (fullPath.includes("intercom")) return true;
+  if (fullPath.includes("zendesk")) return true;
+  if (fullPath.includes("hubspot")) return true;
+
+  return hasApiCredentialParam;
+}
+
+function stabilizeRemediatedHtml(html, website) {
+  const websiteOrigin = buildOrigin(website);
+  const disabledScripts = [];
+
+  const rewritten = String(html || "").replace(
+    /<script\b([^>]*)\bsrc=(["'])([^"']+)\2([^>]*)>\s*<\/script>/gi,
+    (full, preAttrs, quote, src, postAttrs) => {
+      if (!isLikelyThirdPartyApiScript(src, websiteOrigin)) {
+        return full;
+      }
+      disabledScripts.push(src);
+      return `<!-- compliancecurrent-disabled-script: ${escapeHtml(src)} -->`;
+    }
+  );
+
+  return { html: rewritten, disabledScripts };
+}
+
 function injectComplianceOverlay(originalHtml, website, issues) {
-  const baseHtml =
+  const seededHtml =
     originalHtml && originalHtml.trim()
       ? originalHtml
       : `<!doctype html><html><head><meta charset="utf-8"><title>${website}</title></head><body><main></main></body></html>`;
+  const stabilized = stabilizeRemediatedHtml(seededHtml, website);
+  const baseHtml = stabilized.html;
 
   const issuesList = issues
     .map((issue) => `<li><strong>${issue.title}:</strong> ${issue.recommendation}</li>`)
@@ -329,6 +392,18 @@ function injectComplianceOverlay(originalHtml, website, issues) {
     .join("");
 
   const safeWebsite = escapeHtml(website);
+  const disabledScriptsList = stabilized.disabledScripts
+    .slice(0, 12)
+    .map((src) => `<li><code>${escapeHtml(src)}</code></li>`)
+    .join("");
+  const disabledScriptsNote = stabilized.disabledScripts.length
+    ? `<section id="ccpa-download-compatibility" style="background:#fff8e8;border:1px solid #f7d9a3;border-radius:10px;padding:14px;margin:0 0 12px;">
+    <h3 style="margin:0 0 8px;">Download Compatibility Notes</h3>
+    <p style="margin:0 0 8px;">To keep this downloadable remediation package stable across unknown hosting environments, some third-party API/tracking scripts were disabled in this exported file.</p>
+    <ul style="margin:0 0 8px;padding-left:20px;">${disabledScriptsList}</ul>
+    <p style="margin:0;">If your production site needs those integrations, re-enable them in your main codebase after validating API keys and embedding method requirements.</p>
+  </section>`
+    : "";
 
   const block = `
 <section id="compliancecurrent-ccpa-overlay" style="border:2px solid #0a6ad6;border-radius:12px;padding:20px;margin:24px;background:#f5f9ff;font-family:Arial,sans-serif;line-height:1.5;color:#102138;">
@@ -403,6 +478,7 @@ function injectComplianceOverlay(originalHtml, website, issues) {
     <h3 style="margin:0 0 8px;">Detected Risk Fixes</h3>
     <ul style="margin:0;padding-left:20px;">${issuesList}</ul>
   </section>
+  ${disabledScriptsNote}
 
   <p style="font-size:12px;color:#5a6778;margin:8px 0 0;">${LEGAL_DISCLAIMER}</p>
 </section>
