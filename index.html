@@ -215,6 +215,19 @@
               Enter your details and website URL to generate your CCPA risk report and
               implementation-ready compliance package.
             </p>
+            <article class="notice-card" aria-label="Notice at Collection">
+              <h3>Notice at Collection</h3>
+              <p>
+                We collect business name, contact email, number of locations, and website URL
+                to provide your compliance scan, support your account, and improve service quality.
+              </p>
+              <p>
+                California residents can submit access, deletion, correction, and opt-out requests.
+                See <a href="/privacy-policy">Privacy Policy</a>,
+                <a href="/privacy-request">Privacy Requests</a>, and
+                <a href="/do-not-sell">Do Not Sell/Share</a>.
+              </p>
+            </article>
           </div>
           <form class="cta-form" action="/api/submit" method="POST">
             <input type="hidden" name="plan" value="free_audit">
@@ -254,6 +267,27 @@
           </div>
         </div>
       </section>
+
+      <section class="section-pad legal-links-band">
+        <div class="container">
+          <h2 class="section-title">Your Privacy Controls</h2>
+          <div class="grid-2">
+            <article class="card">
+              <h3>Manage CCPA Rights</h3>
+              <p>Submit access, deletion, correction, and opt-out requests at any time.</p>
+              <p><a class="inline-link" href="/privacy-request">Open Privacy Request Center</a></p>
+            </article>
+            <article class="card">
+              <h3>Control Sharing and Cookies</h3>
+              <p>Manage Do Not Sell/Share and cookie preferences, including GPC coverage.</p>
+              <p>
+                <a class="inline-link" href="/do-not-sell">Do Not Sell/Share</a>
+                · <a class="inline-link" href="/cookie-policy">Cookie Policy</a>
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -273,6 +307,13 @@
           <p><a href="#pricing">Pricing</a></p>
           <p><a href="#faq">FAQ</a></p>
         </div>
+        <div>
+          <p><strong>Legal</strong></p>
+          <p><a href="/privacy-policy">Privacy Policy</a></p>
+          <p><a href="/privacy-request">Privacy Requests</a></p>
+          <p><a href="/do-not-sell">Do Not Sell/Share</a></p>
+          <p><a href="/cookie-policy">Cookie Policy</a></p>
+        </div>
       </div>
     </footer>
     <script>
@@ -285,6 +326,8 @@
         const issuesList = document.getElementById("issuesList");
         const reportLinks = document.getElementById("reportLinks");
         const planButtons = document.querySelectorAll("[data-plan]");
+        const cookieBannerKey = "ccpa_cookie_pref";
+        const optOutKey = "ccpa_opt_out";
 
         function setPlan(plan) {
           planInput.value = plan;
@@ -350,6 +393,37 @@
         planButtons.forEach((button) => {
           button.addEventListener("click", () => setPlan(button.dataset.plan));
         });
+
+        (function initCookieBanner() {
+          if (localStorage.getItem(cookieBannerKey)) return;
+
+          const banner = document.createElement("aside");
+          banner.className = "cookie-banner";
+          banner.innerHTML =
+            '<p>We use cookies and similar technologies for site operations, analytics, and sharing preferences. You can update your settings any time. <a href=\"/cookie-policy\">Cookie Policy</a></p>' +
+            '<div class=\"cookie-actions\">' +
+            '<button type=\"button\" class=\"btn btn-sm\" id=\"cookieAllow\">Allow All</button>' +
+            '<button type=\"button\" class=\"btn btn-sm btn-ghost\" id=\"cookieEssential\">Essential Only</button>' +
+            '</div>';
+          document.body.appendChild(banner);
+
+          document.getElementById("cookieAllow").addEventListener("click", function () {
+            localStorage.setItem(cookieBannerKey, "accept_all");
+            banner.remove();
+          });
+
+          document.getElementById("cookieEssential").addEventListener("click", function () {
+            localStorage.setItem(cookieBannerKey, "essential_only");
+            localStorage.setItem(optOutKey, "true");
+            banner.remove();
+          });
+
+          if (navigator.globalPrivacyControl === true) {
+            localStorage.setItem(cookieBannerKey, "essential_only");
+            localStorage.setItem(optOutKey, "true");
+            banner.remove();
+          }
+        })();
 
         autoHandleCheckoutSuccess();
 

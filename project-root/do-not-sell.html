@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Do Not Sell or Share | ComplianceCurrent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="logo" href="/">ComplianceCurrent</a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="/#features">Features</a>
+          <a href="/#process">Process</a>
+          <a href="/#pricing">Pricing</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-sm" href="/#cta">Free Scan</a>
+      </div>
+    </header>
+
+    <main class="section-pad">
+      <div class="container legal-layout">
+        <p class="eyebrow">Consumer Rights</p>
+        <h1 class="legal-title">Do Not Sell or Share My Personal Information</h1>
+        <p class="legal-updated">Effective date: April 13, 2026</p>
+
+        <section class="legal-card">
+          <h2>Opt-Out Request</h2>
+          <p>
+            California residents may opt out of the sale or sharing of personal information.
+            Use the options below to save your preference and submit a request.
+          </p>
+          <div class="consent-controls">
+            <button class="btn" id="optOutButton" type="button">Set Opt-Out Preference</button>
+            <button class="btn btn-ghost" id="optInButton" type="button">Allow Sharing</button>
+          </div>
+          <p id="optOutStatus" class="legal-note"></p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Global Privacy Control (GPC)</h2>
+          <p>
+            If your browser sends a Global Privacy Control signal, we treat it as a valid opt-out request where required.
+          </p>
+          <p id="gpcStatus" class="legal-note"></p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Alternative Submission Methods</h2>
+          <p>Email: <a href="mailto:complianceconcurrent@gmail.com">complianceconcurrent@gmail.com</a></p>
+          <p>Phone: (916) 661-1844</p>
+          <p>
+            Include your full name, business name, and email so we can verify and process your request.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-wrap">
+        <div>
+          <strong>ComplianceCurrent</strong>
+          <p>CCPA readiness platform for California med spas.</p>
+        </div>
+        <div>
+          <p><strong>Contact</strong></p>
+          <p>complianceconcurrent@gmail.com</p>
+          <p>(916) 661-1844</p>
+        </div>
+        <div>
+          <p><strong>Legal</strong></p>
+          <p><a href="/privacy-policy">Privacy Policy</a></p>
+          <p><a href="/privacy-request">Privacy Requests</a></p>
+          <p><a href="/do-not-sell">Do Not Sell/Share</a></p>
+          <p><a href="/cookie-policy">Cookie Policy</a></p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const key = "ccpa_opt_out";
+        const status = document.getElementById("optOutStatus");
+        const gpcStatus = document.getElementById("gpcStatus");
+
+        function render() {
+          const value = localStorage.getItem(key);
+          if (value === "true") {
+            status.textContent = "Your opt-out preference is active on this browser.";
+          } else if (value === "false") {
+            status.textContent = "You currently allow sharing preferences on this browser.";
+          } else {
+            status.textContent = "No preference saved yet for this browser.";
+          }
+
+          if (navigator.globalPrivacyControl === true) {
+            gpcStatus.textContent = "Global Privacy Control detected: ON.";
+          } else {
+            gpcStatus.textContent = "Global Privacy Control was not detected in this browser.";
+          }
+        }
+
+        document.getElementById("optOutButton").addEventListener("click", function () {
+          localStorage.setItem(key, "true");
+          render();
+        });
+
+        document.getElementById("optInButton").addEventListener("click", function () {
+          localStorage.setItem(key, "false");
+          render();
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

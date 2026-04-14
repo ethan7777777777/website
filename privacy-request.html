@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Requests | ComplianceCurrent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="logo" href="/">ComplianceCurrent</a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="/#features">Features</a>
+          <a href="/#process">Process</a>
+          <a href="/#pricing">Pricing</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-sm" href="/#cta">Free Scan</a>
+      </div>
+    </header>
+
+    <main class="section-pad">
+      <div class="container legal-layout">
+        <p class="eyebrow">Consumer Rights</p>
+        <h1 class="legal-title">Privacy Request Center</h1>
+        <p class="legal-updated">Effective date: April 13, 2026</p>
+
+        <section class="legal-card">
+          <h2>Your California Rights</h2>
+          <ul>
+            <li>Know/Access what personal information we collect and disclose.</li>
+            <li>Delete eligible personal information.</li>
+            <li>Correct inaccurate personal information.</li>
+            <li>Opt out of sale or sharing of personal information.</li>
+            <li>Receive equal service without discrimination for exercising rights.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card">
+          <h2>Submit a Request</h2>
+          <p>
+            You may submit a request through at least two methods:
+            email and phone.
+          </p>
+          <p>Email: <a href="mailto:complianceconcurrent@gmail.com">complianceconcurrent@gmail.com</a></p>
+          <p>Phone: (916) 661-1844</p>
+          <p>
+            You may also use the prefilled request email generator below.
+          </p>
+
+          <form id="privacyRequestForm" class="legal-form">
+            <label>
+              Full name
+              <input type="text" name="name" required />
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" required />
+            </label>
+            <label>
+              Request type
+              <select name="requestType" required>
+                <option value="" disabled selected>Select request type</option>
+                <option value="Access Request">Access Request</option>
+                <option value="Deletion Request">Deletion Request</option>
+                <option value="Correction Request">Correction Request</option>
+                <option value="Opt-Out Request">Opt-Out Request</option>
+              </select>
+            </label>
+            <label>
+              Details
+              <textarea name="details" rows="5" placeholder="Describe your request"></textarea>
+            </label>
+            <button type="submit" class="btn">Generate Request Email</button>
+          </form>
+        </section>
+
+        <section class="legal-card">
+          <h2>Verification Process</h2>
+          <p>
+            Before fulfilling access, deletion, or correction requests, we verify identity using
+            a reasonable, risk-based process. We may request matching account/contact details
+            and additional information to confirm authorization.
+          </p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Authorized Agent Requests</h2>
+          <p>
+            You may designate an authorized agent to submit requests on your behalf.
+            We may require proof of signed permission and identity verification.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-wrap">
+        <div>
+          <strong>ComplianceCurrent</strong>
+          <p>CCPA readiness platform for California med spas.</p>
+        </div>
+        <div>
+          <p><strong>Contact</strong></p>
+          <p>complianceconcurrent@gmail.com</p>
+          <p>(916) 661-1844</p>
+        </div>
+        <div>
+          <p><strong>Legal</strong></p>
+          <p><a href="/privacy-policy">Privacy Policy</a></p>
+          <p><a href="/privacy-request">Privacy Requests</a></p>
+          <p><a href="/do-not-sell">Do Not Sell/Share</a></p>
+          <p><a href="/cookie-policy">Cookie Policy</a></p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const form = document.getElementById("privacyRequestForm");
+        if (!form) return;
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const name = form.name.value.trim();
+          const email = form.email.value.trim();
+          const requestType = form.requestType.value;
+          const details = form.details.value.trim();
+
+          const subject = encodeURIComponent("CCPA Privacy Request - " + requestType);
+          const body = encodeURIComponent(
+            "Name: " + name + "\n" +
+            "Email: " + email + "\n" +
+            "Request Type: " + requestType + "\n\n" +
+            "Details:\n" + (details || "N/A")
+          );
+
+          window.location.href = "mailto:complianceconcurrent@gmail.com?subject=" + subject + "&body=" + body;
+        });
+      })();
+    </script>
+  </body>
+</html>

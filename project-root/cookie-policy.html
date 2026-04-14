@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Policy | ComplianceCurrent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="logo" href="/">ComplianceCurrent</a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="/#features">Features</a>
+          <a href="/#process">Process</a>
+          <a href="/#pricing">Pricing</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+        <a class="btn btn-sm" href="/#cta">Free Scan</a>
+      </div>
+    </header>
+
+    <main class="section-pad">
+      <div class="container legal-layout">
+        <p class="eyebrow">Legal</p>
+        <h1 class="legal-title">Cookie Policy</h1>
+        <p class="legal-updated">Effective date: April 13, 2026</p>
+
+        <section class="legal-card">
+          <h2>How We Use Cookies and Similar Technologies</h2>
+          <p>
+            We use cookies and related technologies to operate our website, improve performance,
+            and understand usage trends. You can control non-essential preferences on this browser.
+          </p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Cookie Categories</h2>
+          <ul>
+            <li>Strictly Necessary: required for site functionality and security.</li>
+            <li>Analytics: helps us measure usage and improve the service.</li>
+            <li>Advertising/Sharing: used for marketing and measurement where enabled.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card">
+          <h2>Manage Preferences</h2>
+          <div class="consent-controls">
+            <button class="btn" id="allowAll" type="button">Allow Analytics + Advertising</button>
+            <button class="btn btn-ghost" id="essentialOnly" type="button">Essential Only</button>
+          </div>
+          <p id="cookieStatus" class="legal-note"></p>
+        </section>
+
+        <section class="legal-card">
+          <h2>Opt-Out and GPC</h2>
+          <p>
+            You can also submit opt-out requests at <a href="/do-not-sell">Do Not Sell/Share</a>.
+            If your browser sends a Global Privacy Control signal, we treat it as a valid opt-out signal where required.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-wrap">
+        <div>
+          <strong>ComplianceCurrent</strong>
+          <p>CCPA readiness platform for California med spas.</p>
+        </div>
+        <div>
+          <p><strong>Contact</strong></p>
+          <p>complianceconcurrent@gmail.com</p>
+          <p>(916) 661-1844</p>
+        </div>
+        <div>
+          <p><strong>Legal</strong></p>
+          <p><a href="/privacy-policy">Privacy Policy</a></p>
+          <p><a href="/privacy-request">Privacy Requests</a></p>
+          <p><a href="/do-not-sell">Do Not Sell/Share</a></p>
+          <p><a href="/cookie-policy">Cookie Policy</a></p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const key = "ccpa_cookie_pref";
+        const status = document.getElementById("cookieStatus");
+
+        function render() {
+          const value = localStorage.getItem(key);
+          if (value === "accept_all") {
+            status.textContent = "Current preference: Analytics and advertising allowed.";
+          } else if (value === "essential_only") {
+            status.textContent = "Current preference: Essential cookies only.";
+          } else {
+            status.textContent = "No preference saved yet for this browser.";
+          }
+        }
+
+        document.getElementById("allowAll").addEventListener("click", function () {
+          localStorage.setItem(key, "accept_all");
+          render();
+        });
+
+        document.getElementById("essentialOnly").addEventListener("click", function () {
+          localStorage.setItem(key, "essential_only");
+          render();
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
