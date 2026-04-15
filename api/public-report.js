@@ -43,11 +43,14 @@ module.exports = async function handler(req, res) {
           s.risk_score,
           s.detected_issues,
           s.remediated_html,
+          s.remediation_status,
+          s.remediation_error,
+          s.remediated_at,
           s.legal_disclaimer,
           s.updated_at
        FROM compliance_requests l
        LEFT JOIN LATERAL (
-         SELECT id, status, risk_label, risk_score, detected_issues, remediated_html, legal_disclaimer, updated_at
+         SELECT id, status, risk_label, risk_score, detected_issues, remediated_html, remediation_status, remediation_error, remediated_at, legal_disclaimer, updated_at
          FROM compliance_scans
          WHERE lead_id = l.id
          ORDER BY created_at DESC
@@ -81,6 +84,9 @@ module.exports = async function handler(req, res) {
       issues: row.detected_issues || [],
       ccpa_uncompliances: row.detected_issues || [],
       legal_disclaimer: row.legal_disclaimer,
+      remediation_status: row.remediation_status,
+      remediation_error: row.remediation_error,
+      remediated_at: row.remediated_at,
       updated_at: row.updated_at,
       download_url: downloadUrl,
       payment_required: row.plan === "fix_299" && row.payment_status !== "paid"

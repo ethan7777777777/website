@@ -1,5 +1,6 @@
 const { ensureSchema, getPool } = require("../lib/db");
 const { getStripeClient } = require("../lib/stripe");
+const { generatePaidRemediationForLead } = require("../lib/remediation-worker");
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -50,6 +51,12 @@ module.exports = async function handler(req, res) {
             session.subscription ? String(session.subscription) : null
           ]
         );
+
+        try {
+          await generatePaidRemediationForLead(leadId, { force: true });
+        } catch (_remediationError) {
+          // Keep webhook success semantics; remediation can be retried on download.
+        }
       }
     }
 

@@ -4,7 +4,8 @@
   "private": true,
   "description": "ComplianceCurrent lead capture and CCPA scan intake",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "remediate:lead": "node scripts/remediate-paid-lead.js"
   },
   "dependencies": {
     "pg": "^8.16.3",

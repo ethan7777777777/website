@@ -34,7 +34,29 @@ Set these in Vercel project settings:
 
 - `GET /api/download-remediated?lead_id=<id>&token=<report_token>`
   - Downloads generated remediated website HTML
-  - Available only for paid (`fix_299`) scans after completion
+  - Available only for paid (`fix_299`) scans after payment
+  - If advanced paid remediation is not ready, endpoint auto-runs remediation and retries
+
+- `POST /api/remediate?lead_id=<id>`
+  - Requires `Authorization: Bearer <AI_READ_API_KEY>`
+  - Force-runs paid remediation generation for a lead
+  - Optional `force=false` to skip regeneration when already ready
+
+## Paid Remediation Worker
+
+- On Stripe `checkout.session.completed`, the webhook now triggers a paid remediation worker.
+- Worker behavior:
+  - re-analyzes the scraped site HTML
+  - detects forms, API endpoints, and third-party integrations
+  - generates additive compliance sections designed to avoid breaking backend/API flows
+  - stores remediation analysis metadata in `firecrawl_raw.remediation_analysis`
+  - updates scan fields: `remediation_status`, `remediation_error`, and `remediated_at`
+
+### Manual CLI
+
+```bash
+npm run remediate:lead -- <lead_id> [force=true|false]
+```
 
 ## Legal Note
 

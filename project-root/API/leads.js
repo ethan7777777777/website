@@ -48,10 +48,11 @@ module.exports = async function handler(req, res) {
           l.report_token,
           s.status AS latest_scan_status,
           s.risk_label AS latest_risk_label,
-          s.risk_score AS latest_risk_score
+          s.risk_score AS latest_risk_score,
+          s.remediation_status AS latest_remediation_status
        FROM compliance_requests l
        LEFT JOIN LATERAL (
-         SELECT status, risk_label, risk_score
+         SELECT status, risk_label, risk_score, remediation_status
          FROM compliance_scans cs
          WHERE cs.lead_id = l.id
          ORDER BY cs.created_at DESC
