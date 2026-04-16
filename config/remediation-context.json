@@ -1,0 +1,38 @@
+{
+  "version": "2026-04-15.1",
+  "goal": "Generate and review a remediation HTML package for paid leads with maximum compatibility and minimum breakage risk.",
+  "hard_constraints": [
+    "Never remove or rewrite existing backend/API endpoints.",
+    "Never alter checkout/payment/auth script logic.",
+    "Prefer additive compliance blocks over destructive edits.",
+    "Preserve existing forms, script tags, and action URLs unless clearly malicious.",
+    "Keep output as a single valid HTML document."
+  ],
+  "ccpa_requirements": [
+    "Notice at collection",
+    "Consumer rights disclosure (know/access, delete, correct, opt-out)",
+    "Do Not Sell or Share mechanism",
+    "Cookie/tracking disclosure",
+    "Request methods and verification guidance"
+  ],
+  "review_rubric": {
+    "approve_only_if": [
+      "No critical breakage risk to existing forms/APIs/scripts.",
+      "Required CCPA controls are present in the generated output.",
+      "Output HTML remains structurally valid."
+    ],
+    "reject_if": [
+      "Any checkout, booking, auth, or critical API flow appears broken.",
+      "Generated output removes major site content.",
+      "Generated output is not parseable HTML."
+    ]
+  },
+  "output_schema": {
+    "approved": "boolean",
+    "summary": "string",
+    "breakage_risks": "string[]",
+    "changes_applied": "string[]",
+    "required_followups": "string[]",
+    "remediated_html": "string"
+  }
+}
