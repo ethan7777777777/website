@@ -7,7 +7,7 @@ function getApiKey() {
 }
 
 function trimHtml(html) {
-  const max = Number(process.env.REMEDIATION_HTML_CHAR_LIMIT || 180000);
+  const max = Number(process.env.REMEDIATION_HTML_CHAR_LIMIT || 80000);
   const value = String(html || "");
   if (value.length <= max) return value;
   return `${value.slice(0, max)}\n<!-- truncated_for_model_input -->`;
@@ -62,15 +62,20 @@ async function generateRemediationWithModel(input) {
   }
 
   const model = getModel();
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.OPENAI_REMEDIATION_TIMEOUT_MS || 25000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`
     },
+    signal: controller.signal,
     body: JSON.stringify({
       model,
-      reasoning: { effort: "medium" },
+      reasoning: { effort: "low" },
       input: [
         {
           role: "system",
@@ -113,7 +118,7 @@ async function generateRemediationWithModel(input) {
         }
       ]
     })
-  });
+  }).finally(() => clearTimeout(timer));
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
