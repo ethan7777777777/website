@@ -149,11 +149,27 @@ async function generateCandidateHtml(input, apiKey) {
       model,
       max_output_tokens: Number(process.env.OPENAI_REMEDIATION_MAX_OUTPUT_TOKENS || 2200),
       reasoning: { effort: "low" },
+      text: {
+        format: {
+          type: "json_schema",
+          name: "remediation_generation",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              remediated_html: { type: "string" },
+              summary: { type: "string" }
+            },
+            required: ["remediated_html", "summary"]
+          }
+        }
+      },
       input: [
         {
           role: "system",
           content:
-            "You are a senior web remediation engineer. Preserve backend/API behavior and apply additive CCPA controls. Return only the remediated HTML document."
+            "You are a senior web remediation engineer. Preserve backend/API behavior and apply additive CCPA controls. Return JSON with remediated_html and summary."
         },
         {
           role: "user",
@@ -176,8 +192,11 @@ async function generateCandidateHtml(input, apiKey) {
     }
   });
 
+  const generatedJson = readResponseJson(payload);
   const text = readResponseText(payload);
-  const candidateHtml = extractHtmlFromText(text);
+  const candidateHtml = generatedJson?.remediated_html
+    ? String(generatedJson.remediated_html).trim()
+    : extractHtmlFromText(text);
   if (!candidateHtml) {
     throw new Error("Generation model returned empty HTML output");
   }
