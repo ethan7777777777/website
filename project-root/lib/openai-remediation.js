@@ -28,6 +28,18 @@ function parseJsonFromText(text) {
     try {
       return JSON.parse(fenced[1].trim());
     } catch (_err) {
+      // continue
+    }
+  }
+
+  // Last-resort extraction: first '{' to last '}' block.
+  const firstBrace = value.indexOf("{");
+  const lastBrace = value.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    const candidate = value.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch (_err) {
       return null;
     }
   }
