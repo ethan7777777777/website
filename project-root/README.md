@@ -9,7 +9,8 @@ Set these in Vercel project settings:
 - `FIRECRAWL_API_KEY` - Firecrawl API key for website scraping
 - `FIRECRAWL_API_BASE` (optional) - defaults to `https://api.firecrawl.dev`
 - `OPENAI_API_KEY` - OpenAI API key for model-based paid remediation
-- `OPENAI_MODEL` - model id for generation/review (example: `gpt-5.1-codex`)
+- `OPENAI_MODEL` - generation model id (example: `gpt-5.1-codex`)
+- `OPENAI_REVIEW_MODEL` - review/JSON-validation model id (default: `gpt-5`)
 - `REMEDIATION_HTML_CHAR_LIMIT` (optional) - cap for model input HTML length (default `180000`)
 
 ## API Endpoints
