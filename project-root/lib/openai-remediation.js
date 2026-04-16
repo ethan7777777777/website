@@ -78,7 +78,7 @@ async function generateRemediationWithModel(input) {
   const timeoutMs = Number(process.env.OPENAI_REMEDIATION_TIMEOUT_MS || 45000);
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,11 +87,10 @@ async function generateRemediationWithModel(input) {
     signal: controller.signal,
     body: JSON.stringify({
       model,
-      temperature: 0.1,
-      max_tokens: Number(process.env.OPENAI_REMEDIATION_MAX_OUTPUT_TOKENS || 2200),
-      response_format: {
-        type: "json_schema",
-        json_schema: {
+      max_output_tokens: Number(process.env.OPENAI_REMEDIATION_MAX_OUTPUT_TOKENS || 2200),
+      text: {
+        format: {
+          type: "json_schema",
           name: "remediation_result",
           strict: true,
           schema: {
@@ -116,7 +115,7 @@ async function generateRemediationWithModel(input) {
           }
         }
       },
-      messages: [
+      input: [
         {
           role: "system",
           content:
@@ -125,14 +124,19 @@ async function generateRemediationWithModel(input) {
         {
           role: "user",
           content: [
-            `Context Policy JSON:\n${JSON.stringify(input.context)}`,
-            `Lead Memory JSON:\n${JSON.stringify(input.memory)}`,
-            `Website: ${input.website}`,
-            `Detected issues JSON:\n${JSON.stringify(input.issues)}`,
-            `Integration analysis JSON:\n${JSON.stringify(input.integration)}`,
-            "Do not remove existing APIs/forms/scripts unless absolutely required for safety.",
-            `Source HTML:\n${trimHtml(input.html)}`
-          ].join("\n\n")
+            {
+              type: "input_text",
+              text: [
+                `Context Policy JSON:\n${JSON.stringify(input.context)}`,
+                `Lead Memory JSON:\n${JSON.stringify(input.memory)}`,
+                `Website: ${input.website}`,
+                `Detected issues JSON:\n${JSON.stringify(input.issues)}`,
+                `Integration analysis JSON:\n${JSON.stringify(input.integration)}`,
+                "Do not remove existing APIs/forms/scripts unless absolutely required for safety.",
+                `Source HTML:\n${trimHtml(input.html)}`
+              ].join("\n\n")
+            }
+          ]
         }
       ]
     })
@@ -144,9 +148,7 @@ async function generateRemediationWithModel(input) {
     throw new Error(message);
   }
 
-  const rawText =
-    payload?.choices?.[0]?.message?.content ||
-    readResponseText(payload);
+  const rawText = readResponseText(payload);
   const parsed = parseJsonFromText(rawText);
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Model returned non-JSON output");
