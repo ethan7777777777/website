@@ -78,7 +78,7 @@ async function generateRemediationWithModel(input) {
   const timeoutMs = Number(process.env.OPENAI_REMEDIATION_TIMEOUT_MS || 45000);
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,47 +87,52 @@ async function generateRemediationWithModel(input) {
     signal: controller.signal,
     body: JSON.stringify({
       model,
-      reasoning: { effort: "low" },
-      max_output_tokens: Number(process.env.OPENAI_REMEDIATION_MAX_OUTPUT_TOKENS || 2200),
-      input: [
+      temperature: 0.1,
+      max_tokens: Number(process.env.OPENAI_REMEDIATION_MAX_OUTPUT_TOKENS || 2200),
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "remediation_result",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              approved: { type: "boolean" },
+              summary: { type: "string" },
+              breakage_risks: { type: "array", items: { type: "string" } },
+              changes_applied: { type: "array", items: { type: "string" } },
+              required_followups: { type: "array", items: { type: "string" } },
+              remediated_html: { type: "string" }
+            },
+            required: [
+              "approved",
+              "summary",
+              "breakage_risks",
+              "changes_applied",
+              "required_followups",
+              "remediated_html"
+            ]
+          }
+        }
+      },
+      messages: [
         {
           role: "system",
           content:
-            "You are a senior web remediation engineer. Return strict JSON only. Preserve backend/API behavior and apply additive CCPA changes."
+            "You are a senior web remediation engineer. Preserve backend/API behavior and apply additive CCPA changes. Return strict JSON."
         },
         {
           role: "user",
           content: [
-            {
-              type: "input_text",
-              text: `Context Policy JSON:\n${JSON.stringify(input.context)}`
-            },
-            {
-              type: "input_text",
-              text: `Lead Memory JSON:\n${JSON.stringify(input.memory)}`
-            },
-            {
-              type: "input_text",
-              text: `Website: ${input.website}`
-            },
-            {
-              type: "input_text",
-              text: `Detected issues JSON:\n${JSON.stringify(input.issues)}`
-            },
-            {
-              type: "input_text",
-              text: `Integration analysis JSON:\n${JSON.stringify(input.integration)}`
-            },
-            {
-              type: "input_text",
-              text:
-                "Return JSON with keys: approved(boolean), summary(string), breakage_risks(string[]), changes_applied(string[]), required_followups(string[]), remediated_html(string)."
-            },
-            {
-              type: "input_text",
-              text: `Source HTML:\n${trimHtml(input.html)}`
-            }
-          ]
+            `Context Policy JSON:\n${JSON.stringify(input.context)}`,
+            `Lead Memory JSON:\n${JSON.stringify(input.memory)}`,
+            `Website: ${input.website}`,
+            `Detected issues JSON:\n${JSON.stringify(input.issues)}`,
+            `Integration analysis JSON:\n${JSON.stringify(input.integration)}`,
+            "Do not remove existing APIs/forms/scripts unless absolutely required for safety.",
+            `Source HTML:\n${trimHtml(input.html)}`
+          ].join("\n\n")
         }
       ]
     })
@@ -139,7 +144,9 @@ async function generateRemediationWithModel(input) {
     throw new Error(message);
   }
 
-  const rawText = readResponseText(payload);
+  const rawText =
+    payload?.choices?.[0]?.message?.content ||
+    readResponseText(payload);
   const parsed = parseJsonFromText(rawText);
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Model returned non-JSON output");
