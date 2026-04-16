@@ -71,6 +71,29 @@ async function markRemediationStatus(scanId, status, errorMessage) {
   );
 }
 
+function applyModelRemediation(baseHtml, modelOutput) {
+  const base = String(baseHtml || "");
+  const output = String(modelOutput || "").trim();
+  if (!output) return base;
+
+  if (/<html[\s>]/i.test(output)) {
+    return output;
+  }
+
+  let next = base;
+  next = next.replace(/<style id="compliancecurrent-theme">[\s\S]*?<\/style>/i, "");
+  next = next.replace(/<section id="compliancecurrent-remediation-pack">[\s\S]*?<\/section>/i, "");
+
+  const block = output.includes("compliancecurrent-remediation-pack")
+    ? output
+    : `<section id="compliancecurrent-remediation-pack">${output}</section>`;
+
+  if (next.includes("</body>")) {
+    return next.replace("</body>", `${block}\n</body>`);
+  }
+  return `${next}\n${block}`;
+}
+
 async function generatePaidRemediationForLead(leadId, options = {}) {
   await ensureSchema();
   const force = options.force === true;
@@ -135,7 +158,7 @@ async function generatePaidRemediationForLead(leadId, options = {}) {
         });
 
         if (aiResult.approved && aiResult.remediated_html) {
-          finalHtml = aiResult.remediated_html;
+          finalHtml = applyModelRemediation(deterministic.remediatedHtml, aiResult.remediated_html);
           finalAnalysis = {
             ...deterministic.analysis,
             generation_mode: "model",
