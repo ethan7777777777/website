@@ -486,22 +486,37 @@ function injectComplianceOverlay(originalHtml, website, issues) {
 (function(){
   try {
     if (document.getElementById("ccpa-cookie-banner")) return;
-    var banner = document.createElement("div");
-    banner.id = "ccpa-cookie-banner";
-    banner.style.cssText = "position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;background:#0f172a;color:#fff;border-radius:10px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);font-family:Arial,sans-serif;";
-    banner.innerHTML = '<div style="max-width:980px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">'
-      + '<div style="font-size:14px;line-height:1.4;">We use cookies and similar technologies. You can manage non-essential tracking preferences and opt out of sale/sharing where applicable.</div>'
-      + '<div style="display:flex;gap:8px;">'
-      + '<button id="ccpa-cookies-essential" style="border:1px solid #475569;background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">Essential Only</button>'
-      + '<button id="ccpa-cookies-accept" style="border:none;background:#22c55e;color:#06210f;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;">Accept</button>'
-      + '</div></div>';
-    document.body.appendChild(banner);
-
     var key = "ccpa_cookie_pref";
-    if (localStorage.getItem(key)) {
-      banner.remove();
+    if (localStorage.getItem(key)) return;
+    if (navigator.globalPrivacyControl === true) {
+      localStorage.setItem(key, "essential_only");
       return;
     }
+
+    var rootStyle = window.getComputedStyle(document.documentElement);
+    var bodyStyle = window.getComputedStyle(document.body || document.documentElement);
+    var sampleButton = document.querySelector(".btn, button, [role='button'], a");
+    var sampleButtonStyle = sampleButton ? window.getComputedStyle(sampleButton) : null;
+    var primary = (rootStyle.getPropertyValue("--primary") || "").trim() || (sampleButtonStyle && sampleButtonStyle.backgroundColor) || (sampleButtonStyle && sampleButtonStyle.color) || "#2563eb";
+    var surface = (rootStyle.getPropertyValue("--card") || "").trim() || bodyStyle.backgroundColor || "#ffffff";
+    var text = (rootStyle.getPropertyValue("--text") || "").trim() || bodyStyle.color || "#0f172a";
+    var border = (rootStyle.getPropertyValue("--line") || "").trim() || primary;
+    var font = bodyStyle.fontFamily || "Arial, sans-serif";
+    var mobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+    var inset = mobile ? "10px" : "16px";
+
+    var banner = document.createElement("aside");
+    banner.id = "ccpa-cookie-banner";
+    banner.setAttribute("role", "dialog");
+    banner.setAttribute("aria-label", "Cookie preferences");
+    banner.style.cssText = "position:fixed;left:" + inset + ";right:" + inset + ";bottom:" + inset + ";z-index:99999;background:" + surface + ";color:" + text + ";border:1px solid " + border + ";border-radius:12px;padding:12px;box-shadow:0 14px 30px rgba(0,0,0,.2);font-family:" + font + ";";
+    banner.innerHTML = '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">'
+      + '<div style="font-size:13.5px;line-height:1.35;max-width:780px;flex:1 1 360px;">We use cookies and similar technologies for site operations, analytics, and sharing preferences. <a href="/cookie-policy" style="color:' + primary + ';font-weight:600;text-decoration:underline;">Cookie Policy</a></div>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<button id="ccpa-cookies-essential" style="border:1px solid ' + border + ';background:transparent;color:' + text + ';border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px;font-weight:600;">Essential Only</button>'
+      + '<button id="ccpa-cookies-accept" style="border:none;background:' + primary + ';color:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px;font-weight:700;">Allow All</button>'
+      + '</div></div>';
+    document.body.appendChild(banner);
 
     var close = function(value){
       try { localStorage.setItem(key, value); } catch(e) {}
