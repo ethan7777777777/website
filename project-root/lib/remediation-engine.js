@@ -325,9 +325,59 @@ function buildCompactCookieBannerScript(theme) {
 </script>`;
 }
 
+function buildMultiFormNoticeScript(theme) {
+  return `<script>
+(function(){
+  function injectNotices() {
+    try {
+      var forms = document.querySelectorAll("form");
+      if (!forms || !forms.length) return;
+
+      forms.forEach(function(form) {
+        if (!form || form.closest("#compliancecurrent-remediation-pack")) return;
+        if (form.dataset.ccpaNoticeInjected === "true") return;
+        if (form.querySelector(".ccpa-form-notice")) {
+          form.dataset.ccpaNoticeInjected = "true";
+          return;
+        }
+
+        var notice = document.createElement("div");
+        notice.className = "ccpa-form-notice";
+        notice.style.cssText =
+          "margin:0 0 10px;padding:9px 11px;border:1px solid ${theme.border};border-radius:8px;" +
+          "background:${theme.surface};color:${theme.text};font-size:12.5px;line-height:1.4;font-family:${escapeHtml(theme.font)};";
+        notice.innerHTML =
+          "Notice at collection: We collect details from this form to provide requested services and compliance support. " +
+          "<a href='/privacy-policy' style='color:${theme.primary};font-weight:600;'>Privacy Policy</a> · " +
+          "<a href='/do-not-sell' style='color:${theme.primary};font-weight:600;'>Do Not Sell/Share</a>";
+
+        var submitTarget = form.querySelector("button[type='submit'], input[type='submit']");
+        if (submitTarget && submitTarget.parentNode) {
+          submitTarget.parentNode.insertBefore(notice, submitTarget);
+        } else {
+          form.appendChild(notice);
+        }
+
+        form.dataset.ccpaNoticeInjected = "true";
+      });
+    } catch (_e) {}
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", injectNotices);
+  } else {
+    injectNotices();
+  }
+
+  setTimeout(injectNotices, 1500);
+})();
+</script>`;
+}
+
 function buildComplianceSection({ website, issues, analysis, generatedAt, theme }) {
   const adaptiveStyle = buildAdaptiveStyle(theme);
   const cookieBannerScript = buildCompactCookieBannerScript(theme);
+  const multiFormNoticeScript = buildMultiFormNoticeScript(theme);
   return `
 ${adaptiveStyle}
 <section id="compliancecurrent-remediation-pack">
@@ -368,7 +418,8 @@ ${adaptiveStyle}
 
   <p class="cc-muted">${escapeHtml(LEGAL_DISCLAIMER)}</p>
 </section>
-${cookieBannerScript}`;
+${cookieBannerScript}
+${multiFormNoticeScript}`;
 }
 
 function injectComplianceSection(html, sectionMarkup) {

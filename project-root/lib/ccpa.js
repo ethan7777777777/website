@@ -484,6 +484,50 @@ function injectComplianceOverlay(originalHtml, website, issues) {
 </section>
 <script>
 (function(){
+  function injectNotices() {
+    try {
+      var rootStyle = window.getComputedStyle(document.documentElement);
+      var bodyStyle = window.getComputedStyle(document.body || document.documentElement);
+      var sampleButton = document.querySelector(".btn, button, [role='button'], a");
+      var sampleButtonStyle = sampleButton ? window.getComputedStyle(sampleButton) : null;
+      var primary = (rootStyle.getPropertyValue("--primary") || "").trim() || (sampleButtonStyle && sampleButtonStyle.backgroundColor) || (sampleButtonStyle && sampleButtonStyle.color) || "#2563eb";
+      var surface = (rootStyle.getPropertyValue("--card") || "").trim() || bodyStyle.backgroundColor || "#ffffff";
+      var text = (rootStyle.getPropertyValue("--text") || "").trim() || bodyStyle.color || "#0f172a";
+      var border = (rootStyle.getPropertyValue("--line") || "").trim() || primary;
+      var font = bodyStyle.fontFamily || "Arial, sans-serif";
+      var forms = document.querySelectorAll("form");
+      if (!forms || !forms.length) return;
+
+      forms.forEach(function(form) {
+        if (!form || form.closest("#compliancecurrent-ccpa-overlay")) return;
+        if (form.dataset.ccpaNoticeInjected === "true") return;
+        if (form.querySelector(".ccpa-form-notice")) {
+          form.dataset.ccpaNoticeInjected = "true";
+          return;
+        }
+
+        var notice = document.createElement("div");
+        notice.className = "ccpa-form-notice";
+        notice.style.cssText =
+          "margin:0 0 10px;padding:9px 11px;border:1px solid " + border + ";border-radius:8px;" +
+          "background:" + surface + ";color:" + text + ";font-size:12.5px;line-height:1.4;font-family:" + font + ";";
+        notice.innerHTML =
+          "Notice at collection: We collect details from this form to provide requested services and compliance support. " +
+          "<a href='/privacy-policy' style='color:" + primary + ";font-weight:600;'>Privacy Policy</a> · " +
+          "<a href='/do-not-sell' style='color:" + primary + ";font-weight:600;'>Do Not Sell/Share</a>";
+
+        var submitTarget = form.querySelector("button[type='submit'], input[type='submit']");
+        if (submitTarget && submitTarget.parentNode) {
+          submitTarget.parentNode.insertBefore(notice, submitTarget);
+        } else {
+          form.appendChild(notice);
+        }
+
+        form.dataset.ccpaNoticeInjected = "true";
+      });
+    } catch (_e) {}
+  }
+
   try {
     if (document.getElementById("ccpa-cookie-banner")) return;
     var key = "ccpa_cookie_pref";
@@ -525,6 +569,13 @@ function injectComplianceOverlay(originalHtml, website, issues) {
     document.getElementById("ccpa-cookies-essential").addEventListener("click", function(){ close("essential_only"); });
     document.getElementById("ccpa-cookies-accept").addEventListener("click", function(){ close("accept_all"); });
   } catch (_e) {}
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", injectNotices);
+  } else {
+    injectNotices();
+  }
+  setTimeout(injectNotices, 1500);
 })();
 </script>`;
 
