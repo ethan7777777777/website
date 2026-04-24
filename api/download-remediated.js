@@ -1,6 +1,13 @@
 const { ensureSchema, getPool } = require("../lib/db");
 const { generatePaidRemediationForLead } = require("../lib/remediation-worker");
 
+function isAdminAuthorized(req) {
+  const expected = process.env.AI_READ_API_KEY;
+  if (!expected) return false;
+  const auth = req.headers.authorization || "";
+  return auth === `Bearer ${expected}`;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -10,6 +17,7 @@ module.exports = async function handler(req, res) {
   const query = req.query || {};
   const leadId = Number(query.lead_id);
   const token = String(query.token || "");
+  const adminOverride = isAdminAuthorized(req);
 
   if (!Number.isInteger(leadId) || leadId < 1 || token.length < 20) {
     return res.status(400).json({ error: "lead_id and token are required" });
@@ -44,11 +52,11 @@ module.exports = async function handler(req, res) {
     }
 
     const row = result.rows[0];
-    if (row.plan !== "fix_299") {
+    if (!adminOverride && row.plan !== "fix_299") {
       return res.status(403).json({ error: "Download is available for the $299 option only" });
     }
 
-    if (row.payment_status !== "paid") {
+    if (!adminOverride && row.payment_status !== "paid") {
       return res.status(402).json({ error: "Payment required before remediated download is available" });
     }
 
@@ -56,7 +64,17 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: "Scan must complete before remediated download is available" });
     }
 
-    if (!row.remediated_html || row.remediation_status !== "ready") {
+    if (!row.remediated_html || (!adminOverride && row.remediation_status !== "ready")) {
+      const canForceGenerate = row.plan === "fix_299" && (row.payment_status === "paid" || adminOverride);
+
+      if (!canForceGenerate) {
+        return res.status(409).json({
+          error: "Remediated code is not ready yet",
+          remediation_status: row.remediation_status || "processing",
+          remediation_error: row.remediation_error || null
+        });
+      }
+
       try {
         await generatePaidRemediationForLead(leadId, { force: true });
       } catch (_error) {
@@ -76,7 +94,7 @@ module.exports = async function handler(req, res) {
         [leadId]
       );
       const latest = refreshed.rows[0] || {};
-      if (!latest.remediated_html || latest.remediation_status !== "ready") {
+      if (!latest.remediated_html || (!adminOverride && latest.remediation_status !== "ready")) {
         return res.status(409).json({
           error: "Remediated code is not ready yet",
           remediation_status: latest.remediation_status || "processing",
