@@ -185,6 +185,7 @@ async function generateCandidateHtml(input, apiKey) {
                 "Hard rule: keep existing scripts/forms/endpoints and avoid destructive rewrites.",
                 "If you include a cookie consent banner, keep it compact (roughly ComplianceCurrent footprint: desktop ~70-95px tall, mobile ~110-170px) and style it to match the target site's existing theme.",
                 "Med spa sites often have multiple forms (booking/consult/contact). Ensure notice-at-collection coverage is applied across all detected forms in a non-breaking additive way.",
+                "Do not append a large standalone remediation section at the bottom of the page. Integrate controls into existing forms/footer/navigation.",
                 "Return only additive compliance module markup for remediated_html (e.g. <style id=\"compliancecurrent-theme\">...</style><section id=\"compliancecurrent-remediation-pack\">...</section>).",
                 `Source HTML:\n${trimHtml(input.html)}`
               ].join("\n\n")
@@ -264,6 +265,7 @@ async function reviewCandidateHtml(input, apiKey, candidate) {
                 `Candidate remediated HTML:\n${trimHtml(candidate.candidate_html)}`,
                 "Cookie banner checks: compact footprint and visually aligned to site theme; reject oversized or generic dark-style banners unless source site uses that style.",
                 "Multi-form checks: candidate must include additive notice-at-collection coverage for multiple forms without changing form actions/handlers.",
+                "Reject any candidate that adds a giant mismatched standalone compliance block at page bottom.",
                 "If safe and compliant, set approved=true and return remediated_html."
               ].join("\n\n")
             }

@@ -373,117 +373,71 @@ function injectComplianceOverlay(originalHtml, website, issues) {
       : `<!doctype html><html><head><meta charset="utf-8"><title>${website}</title></head><body><main></main></body></html>`;
   const stabilized = stabilizeRemediatedHtml(seededHtml, website);
   const baseHtml = stabilized.html;
-
-  const issuesList = issues
-    .map((issue) => `<li><strong>${issue.title}:</strong> ${issue.recommendation}</li>`)
-    .join("");
-  const priorityItems = buildPriorityActionItems(issues)
-    .map((issue) => `<li><strong>${issue.title}:</strong> ${issue.recommendation}</li>`)
-    .join("");
-  const failedIssueIds = new Set(issues.map((issue) => issue.id));
-  const controlRows = buildControlStatus(failedIssueIds)
-    .map(
-      (row) => `<tr>
-  <td style="padding:8px;border-bottom:1px solid #e3ecfb;"><strong>${row.control}</strong></td>
-  <td style="padding:8px;border-bottom:1px solid #e3ecfb;color:${row.status === "Needs Work" ? "#b54708" : "#047857"};">${row.status}</td>
-  <td style="padding:8px;border-bottom:1px solid #e3ecfb;">${row.notes}</td>
-</tr>`
-    )
-    .join("");
-
-  const safeWebsite = escapeHtml(website);
-  const disabledScriptsList = stabilized.disabledScripts
-    .slice(0, 12)
-    .map((src) => `<li><code>${escapeHtml(src)}</code></li>`)
-    .join("");
-  const disabledScriptsNote = stabilized.disabledScripts.length
-    ? `<section id="ccpa-download-compatibility" style="background:#fff8e8;border:1px solid #f7d9a3;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Download Compatibility Notes</h3>
-    <p style="margin:0 0 8px;">To keep this downloadable remediation package stable across unknown hosting environments, some third-party API/tracking scripts were disabled in this exported file.</p>
-    <ul style="margin:0 0 8px;padding-left:20px;">${disabledScriptsList}</ul>
-    <p style="margin:0;">If your production site needs those integrations, re-enable them in your main codebase after validating API keys and embedding method requirements.</p>
-  </section>`
-    : "";
-
   const block = `
-<section id="compliancecurrent-ccpa-overlay" style="border:2px solid #0a6ad6;border-radius:12px;padding:20px;margin:24px;background:#f5f9ff;font-family:Arial,sans-serif;line-height:1.5;color:#102138;">
-  <h2 style="margin-top:0;">ComplianceCurrent CCPA Protection Pack</h2>
-  <p style="margin:0 0 10px;">Generated for: <strong>${safeWebsite}</strong></p>
-  <p style="margin:0 0 16px;">This package adds the baseline controls typically required for California CCPA/CPRA disclosures and request handling.</p>
-
-  <nav aria-label="CCPA quick links" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
-    <a href="#ccpa-notice-at-collection" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Notice at Collection</a>
-    <a href="#ccpa-privacy-policy" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Privacy Policy</a>
-    <a href="#ccpa-do-not-sell" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Do Not Sell/Share</a>
-    <a href="#ccpa-cookie-disclosure" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Cookie Disclosure</a>
-    <a href="#ccpa-privacy-request" style="background:#e7f0ff;padding:6px 10px;border-radius:999px;text-decoration:none;color:#0a57b8;">Privacy Requests</a>
-  </nav>
-
-  <section id="ccpa-notice-at-collection" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Notice at Collection</h3>
-    <p style="margin:0;">At or before collection, we disclose that we collect identifiers, contact details, booking/treatment preferences, payment-adjacent transaction data, device/network data, and website interaction data for scheduling, service delivery, customer support, security, analytics, and legal compliance.</p>
-  </section>
-
-  <section id="ccpa-privacy-policy" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Privacy Policy Language (CCPA)</h3>
-    <p style="margin:0 0 8px;">California consumers have the right to know/access, delete, correct, and opt out of sale/sharing of personal information, and to limit certain uses of sensitive personal information where applicable. We do not discriminate against users for exercising privacy rights.</p>
-    <p style="margin:0;">We retain personal information only as long as reasonably necessary for disclosed business purposes and legal obligations, and we implement reasonable administrative, technical, and physical safeguards.</p>
-  </section>
-
-  <section id="ccpa-do-not-sell" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Do Not Sell or Share My Personal Information</h3>
-    <p style="margin:0 0 8px;">Provide a clear and conspicuous mechanism for California residents to opt out of sale/sharing.</p>
-    <p style="margin:0 0 8px;"><a href="#ccpa-privacy-request" style="color:#0a57b8;font-weight:600;">Do Not Sell or Share My Personal Information</a></p>
-    <p style="margin:0;">Global Privacy Control (GPC) signals should be treated as valid opt-out requests where required.</p>
-  </section>
-
-  <section id="ccpa-cookie-disclosure" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Cookie and Tracking Disclosure</h3>
-    <p style="margin:0 0 8px;">We use cookies and similar technologies for essential site operation, analytics, and advertising. Users can manage preferences and opt out of non-essential tracking and sharing where applicable.</p>
-    <p style="margin:0;">If ad-tech cookies are used, they must be disabled after an opt-out request is received.</p>
-  </section>
-
-  <section id="ccpa-privacy-request" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Privacy Request Methods and Verification</h3>
-    <ul style="margin:0;padding-left:20px;">
-      <li>Email: <a href="mailto:privacy@yourdomain.com">privacy@yourdomain.com</a></li>
-      <li>Phone: (555) 000-0000</li>
-      <li>Web form: /privacy-request endpoint/page</li>
-    </ul>
-    <p style="margin:8px 0 0;">Before fulfilling access/deletion/correction requests, verify requestor identity with a reasonable, risk-based process and support authorized-agent requests.</p>
-  </section>
-
-  <section id="ccpa-service-provider-controls" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Service Provider and Sensitive Data Controls</h3>
-    <p style="margin:0 0 8px;">Use written contracts restricting service providers from retaining, using, or disclosing personal information outside contracted business purposes.</p>
-    <p style="margin:0;">For health/treatment-related information, apply heightened handling controls and clearly disclose those protections.</p>
-  </section>
-
-  <section id="ccpa-detected-risk-fixes" style="background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:14px;margin:0 0 12px;">
-    <h3 style="margin:0 0 8px;">Priority Actions (First 7 Days)</h3>
-    <ul style="margin:0 0 12px;padding-left:20px;">${priorityItems || "<li>No urgent actions identified from current scan.</li>"}</ul>
-    <h3 style="margin:0 0 8px;">CCPA Control Status</h3>
-    <div style="overflow:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        <thead>
-          <tr>
-            <th style="text-align:left;padding:8px;border-bottom:1px solid #cfe0ff;">Control</th>
-            <th style="text-align:left;padding:8px;border-bottom:1px solid #cfe0ff;">Status</th>
-            <th style="text-align:left;padding:8px;border-bottom:1px solid #cfe0ff;">Notes</th>
-          </tr>
-        </thead>
-        <tbody>${controlRows}</tbody>
-      </table>
-    </div>
-    <h3 style="margin:0 0 8px;">Detected Risk Fixes</h3>
-    <ul style="margin:0;padding-left:20px;">${issuesList}</ul>
-  </section>
-  ${disabledScriptsNote}
-
-  <p style="font-size:12px;color:#5a6778;margin:8px 0 0;">${LEGAL_DISCLAIMER}</p>
-</section>
 <script>
 (function(){
+  function toRgb(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return null;
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw)) {
+      var hex = raw.length === 4
+        ? "#" + raw[1] + raw[1] + raw[2] + raw[2] + raw[3] + raw[3]
+        : raw;
+      return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16)
+      };
+    }
+    var rgbMatch = raw.match(/rgba?\\((\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/i);
+    if (rgbMatch) {
+      return { r: Number(rgbMatch[1]), g: Number(rgbMatch[2]), b: Number(rgbMatch[3]) };
+    }
+    return null;
+  }
+
+  function relLuminance(rgb) {
+    var toLinear = function(v) {
+      var c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * toLinear(rgb.r) + 0.7152 * toLinear(rgb.g) + 0.0722 * toLinear(rgb.b);
+  }
+
+  function contrastRatio(c1, c2) {
+    var rgb1 = toRgb(c1);
+    var rgb2 = toRgb(c2);
+    if (!rgb1 || !rgb2) return 1;
+    var l1 = relLuminance(rgb1);
+    var l2 = relLuminance(rgb2);
+    var lighter = Math.max(l1, l2);
+    var darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  function pickText(bg) {
+    return contrastRatio(bg, "#0f172a") >= 4.5 ? "#0f172a" : "#f8fafc";
+  }
+
+  function injectFooterLinks(primary, text, surface, border, font) {
+    try {
+      if (document.getElementById("ccpa-inline-legal-links")) return;
+      var footerTarget = document.querySelector("footer, #footer, #main-footer, .site-footer, .footer, [role='contentinfo']");
+      if (!footerTarget) return;
+      var box = document.createElement("div");
+      box.id = "ccpa-inline-legal-links";
+      box.style.cssText =
+        "margin:14px 0 0;padding:10px 12px;border:1px solid " + border + ";border-radius:8px;" +
+        "background:" + surface + ";color:" + text + ";font-size:12.5px;line-height:1.4;font-family:" + font + ";";
+      box.innerHTML =
+        "<strong style='font-weight:600;'>California Privacy Controls</strong> " +
+        "<a href='/privacy-policy' style='color:" + primary + ";font-weight:600;margin-left:8px;'>Privacy Policy</a> · " +
+        "<a href='/do-not-sell' style='color:" + primary + ";font-weight:600;'>Do Not Sell/Share</a> · " +
+        "<a href='/privacy-request' style='color:" + primary + ";font-weight:600;'>Privacy Requests</a>";
+      footerTarget.appendChild(box);
+    } catch (_e) {}
+  }
+
   function injectNotices() {
     try {
       var rootStyle = window.getComputedStyle(document.documentElement);
@@ -495,11 +449,14 @@ function injectComplianceOverlay(originalHtml, website, issues) {
       var text = (rootStyle.getPropertyValue("--text") || "").trim() || bodyStyle.color || "#0f172a";
       var border = (rootStyle.getPropertyValue("--line") || "").trim() || primary;
       var font = bodyStyle.fontFamily || "Arial, sans-serif";
+      if (contrastRatio(surface, text) < 4.5) {
+        text = pickText(surface);
+      }
       var forms = document.querySelectorAll("form");
       if (!forms || !forms.length) return;
 
       forms.forEach(function(form) {
-        if (!form || form.closest("#compliancecurrent-ccpa-overlay")) return;
+        if (!form) return;
         if (form.dataset.ccpaNoticeInjected === "true") return;
         if (form.querySelector(".ccpa-form-notice")) {
           form.dataset.ccpaNoticeInjected = "true";
@@ -525,6 +482,8 @@ function injectComplianceOverlay(originalHtml, website, issues) {
 
         form.dataset.ccpaNoticeInjected = "true";
       });
+
+      injectFooterLinks(primary, text, surface, border, font);
     } catch (_e) {}
   }
 
@@ -546,6 +505,12 @@ function injectComplianceOverlay(originalHtml, website, issues) {
     var text = (rootStyle.getPropertyValue("--text") || "").trim() || bodyStyle.color || "#0f172a";
     var border = (rootStyle.getPropertyValue("--line") || "").trim() || primary;
     var font = bodyStyle.fontFamily || "Arial, sans-serif";
+    if (contrastRatio(surface, text) < 4.5) {
+      text = pickText(surface);
+    }
+    if (contrastRatio(primary, "#ffffff") < 4.5) {
+      primary = "#2563eb";
+    }
     var mobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
     var inset = mobile ? "10px" : "16px";
 
@@ -577,7 +542,10 @@ function injectComplianceOverlay(originalHtml, website, issues) {
   }
   setTimeout(injectNotices, 1500);
 })();
-</script>`;
+</script>
+<!-- compliancecurrent-remediation-mode: integrated-inline -->
+<!-- compliancecurrent-disabled-scripts: ${escapeHtml(stabilized.disabledScripts.join(", "))} -->
+<!-- compliancecurrent-disclaimer: ${escapeHtml(LEGAL_DISCLAIMER)} -->`;
 
   if (baseHtml.includes("</body>")) {
     return baseHtml.replace("</body>", `${block}\n</body>`);
