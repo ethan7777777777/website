@@ -241,41 +241,6 @@ function extractThemeTokens(html) {
   };
 }
 
-function buildAdaptiveStyle(theme) {
-  return `<style id="compliancecurrent-theme">
-#compliancecurrent-remediation-pack{
-  --cc-primary:${theme.primary};
-  --cc-surface:${theme.surface};
-  --cc-panel:${theme.panel};
-  --cc-border:${theme.border};
-  --cc-text:${theme.text};
-  --cc-muted:${theme.muted};
-  color:var(--cc-text);
-  background:var(--cc-panel);
-  border:2px solid var(--cc-primary);
-  border-radius:12px;
-  padding:20px;
-  margin:24px;
-  font-family:${escapeHtml(theme.font)};
-  line-height:1.5;
-}
-#compliancecurrent-remediation-pack .cc-card{
-  background:var(--cc-surface);
-  border:1px solid var(--cc-border);
-  border-radius:10px;
-  padding:14px;
-  margin:0 0 12px;
-}
-#compliancecurrent-remediation-pack h2,
-#compliancecurrent-remediation-pack h3{margin-top:0;color:var(--cc-text);}
-#compliancecurrent-remediation-pack p,
-#compliancecurrent-remediation-pack li{color:var(--cc-text);}
-#compliancecurrent-remediation-pack .cc-meta{margin:0 0 6px;color:var(--cc-muted);}
-#compliancecurrent-remediation-pack .cc-muted{font-size:12px;color:var(--cc-muted);margin:8px 0 0;}
-#compliancecurrent-remediation-pack a{color:var(--cc-primary);}
-</style>`;
-}
-
 function buildCompactCookieBannerScript(theme) {
   return `<script>
 (function(){
@@ -297,17 +262,17 @@ function buildCompactCookieBannerScript(theme) {
     banner.style.cssText =
       "position:fixed;left:" + inset + ";right:" + inset + ";bottom:" + inset + ";z-index:99999;" +
       "background:${theme.panel};color:${theme.text};border:1px solid ${theme.border};border-radius:12px;" +
-      "padding:12px;box-shadow:0 14px 30px rgba(0,0,0,.2);font-family:${escapeHtml(theme.font)};";
+      "padding:12px;box-shadow:0 14px 30px rgba(0,0,0,.2);";
 
     banner.innerHTML =
       '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">' +
-        '<div style="font-size:13.5px;line-height:1.35;max-width:780px;flex:1 1 360px;">' +
+        '<div style="line-height:1.35;max-width:780px;flex:1 1 360px;">' +
           'We use cookies and similar technologies for site operations, analytics, and sharing preferences. ' +
           '<a href="/cookie-policy" style="color:${theme.primary};font-weight:600;text-decoration:underline;">Cookie Policy</a>' +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-          '<button id="ccpa-cookies-essential" style="border:1px solid ${theme.border};background:transparent;color:${theme.text};border-radius:8px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;">Essential Only</button>' +
-          '<button id="ccpa-cookies-accept" style="border:none;background:${theme.primary};color:#ffffff;border-radius:8px;padding:7px 11px;font-size:13px;font-weight:700;cursor:pointer;">Allow All</button>' +
+          '<button id="ccpa-cookies-essential" style="border:1px solid ${theme.border};background:transparent;color:${theme.text};border-radius:8px;padding:7px 11px;font-weight:600;cursor:pointer;">Essential Only</button>' +
+          '<button id="ccpa-cookies-accept" style="border:none;background:${theme.primary};color:#ffffff;border-radius:8px;padding:7px 11px;font-weight:700;cursor:pointer;">Allow All</button>' +
         '</div>' +
       '</div>';
 
@@ -345,9 +310,9 @@ function buildMultiFormNoticeScript(theme) {
         notice.className = "ccpa-form-notice";
         notice.style.cssText =
           "margin:0 0 10px;padding:9px 11px;border:1px solid ${theme.border};border-radius:8px;" +
-          "background:${theme.surface};color:${theme.text};font-size:12.5px;line-height:1.4;font-family:${escapeHtml(theme.font)};";
+          "background:${theme.surface};color:${theme.text};line-height:1.4;";
         notice.innerHTML =
-          "Notice at collection: We collect details from this form to provide requested services and compliance support. " +
+          "Notice at collection: We collect details from this form to provide lending, investment, and customer support services. " +
           "<a href='/privacy-policy' style='color:${theme.primary};font-weight:600;'>Privacy Policy</a> · " +
           "<a href='/do-not-sell' style='color:${theme.primary};font-weight:600;'>Do Not Sell/Share</a>";
 
@@ -385,9 +350,9 @@ function buildFooterLinksScript(theme) {
     box.id = "ccpa-inline-legal-links";
     box.style.cssText =
       "margin:14px 0 0;padding:10px 12px;border:1px solid ${theme.border};border-radius:8px;" +
-      "background:${theme.surface};color:${theme.text};font-size:12.5px;line-height:1.4;font-family:${escapeHtml(theme.font)};";
+      "background:${theme.surface};color:${theme.text};line-height:1.4;";
     box.innerHTML =
-      "<strong style='font-weight:600;'>California Privacy Controls</strong> " +
+      "<strong style='font-weight:600;'>California Real Estate Privacy Controls</strong> " +
       "<a href='/privacy-policy' style='color:${theme.primary};font-weight:600;margin-left:8px;'>Privacy Policy</a> · " +
       "<a href='/do-not-sell' style='color:${theme.primary};font-weight:600;'>Do Not Sell/Share</a> · " +
       "<a href='/privacy-request' style='color:${theme.primary};font-weight:600;'>Privacy Requests</a>";
@@ -398,12 +363,10 @@ function buildFooterLinksScript(theme) {
 }
 
 function buildComplianceSection({ website, issues, analysis, generatedAt, theme }) {
-  const adaptiveStyle = buildAdaptiveStyle(theme);
   const cookieBannerScript = buildCompactCookieBannerScript(theme);
   const multiFormNoticeScript = buildMultiFormNoticeScript(theme);
   const footerLinksScript = buildFooterLinksScript(theme);
   return `
-${adaptiveStyle}
 ${cookieBannerScript}
 ${multiFormNoticeScript}
 ${footerLinksScript}
